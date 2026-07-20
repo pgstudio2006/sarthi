@@ -83,7 +83,7 @@ export default function App() {
     return null;
   }
 
-  const initialRoute = 'Splash';
+  const initialRoute = 'Home';
 
   return (
     <SafeAreaProvider>

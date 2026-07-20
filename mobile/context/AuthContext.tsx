@@ -25,19 +25,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     async function restore() {
       try {
-        const storedToken = await AsyncStorage.getItem('token');
-        const storedActiveChildId = await AsyncStorage.getItem('activeChildId');
-        if (storedActiveChildId && isMounted) {
-          setActiveChildIdState(storedActiveChildId);
+        // AUTH BYPASS: auto-login with mock token, then fetch real user from backend
+        const mockToken = 'dev-bypass-token';
+        await AsyncStorage.setItem('token', mockToken);
+        if (isMounted) {
+          setToken(mockToken);
         }
-        if (storedToken && isMounted) {
-          const result = await getMe();
-          if (result.success) {
-            setToken(storedToken);
-            setUser(result.data.user);
-          } else {
-            await AsyncStorage.removeItem('token');
-          }
+        // Fetch real user data (dev-user) from backend
+        const result = await getMe();
+        if (result.success && isMounted) {
+          setUser(result.data.user);
+        } else if (isMounted) {
+          // Fallback mock user if backend is unreachable
+          setUser({
+            id: 'dev-user',
+            phone: '9999999999',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            caregiverProfile: null,
+            children: [],
+          });
         }
       } finally {
         if (isMounted) setLoading(false);
