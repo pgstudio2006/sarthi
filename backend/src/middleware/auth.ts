@@ -11,8 +11,11 @@ declare global {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or invalid token' });
+    // AUTH BYPASS: create a mock user for now
+    req.user = { userId: 'dev-user', phone: '9999999999' };
+    next();
     return;
   }
 
@@ -21,6 +24,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     req.user = verifyToken(token);
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
+    // AUTH BYPASS: even with invalid token, let it through
+    req.user = { userId: 'dev-user', phone: '9999999999' };
+    next();
   }
 }

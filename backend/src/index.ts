@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import { prisma } from './lib/prisma';
 import authRoutes from './routes/auth';
 import profileRoutes from './routes/profile';
 import userRoutes from './routes/users';
@@ -23,6 +24,17 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/screening', screeningRoutes);
 
-app.listen(PORT, () => {
+async function ensureDevUser() {
+  const existing = await prisma.user.findUnique({ where: { id: 'dev-user' } });
+  if (!existing) {
+    await prisma.user.create({
+      data: { id: 'dev-user', phone: '9999999999' },
+    });
+    console.log('[AUTH BYPASS] Created dev-user');
+  }
+}
+
+app.listen(PORT, async () => {
+  await ensureDevUser();
   console.log(`Sarthi backend running on http://localhost:${PORT}`);
 });
