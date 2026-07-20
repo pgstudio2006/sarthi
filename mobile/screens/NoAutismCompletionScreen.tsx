@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import ProgressRing from '../components/ProgressRing';
 import LogoIcon from '../assets/logo.svg';
 import CloseIcon from '../assets/figma/screen27/Frame-11.svg';
 import FamilyStarIcon from '../assets/figma/screen27/family_star.svg';
@@ -48,8 +49,12 @@ export default function NoAutismCompletionScreen({ navigation, route }: any) {
   const domainBreakdown = route?.params?.domainBreakdown;
   const progress = Math.min(1, Math.max(0, score / total));
 
-  const domainsWithProgress = DOMAINS.map((d) => {
-    return { ...d };
+  const domainsWithProgress = DOMAINS.map((domain) => {
+    const breakdown = domainBreakdown?.find((item: any) => item.key === domain.key);
+    return {
+      ...domain,
+      progress: typeof breakdown?.progress === 'number' ? breakdown.progress : domain.progress,
+    };
   });
 
   const handleViewReport = () => {
@@ -170,6 +175,12 @@ export default function NoAutismCompletionScreen({ navigation, route }: any) {
                   return (
                     <View key={domain.key} style={styles.domainItem}>
                       <View style={{ width: ringSize, height: ringSize, justifyContent: 'center', alignItems: 'center' }}>
+                        <ProgressRing
+                          size={ringSize}
+                          strokeWidth={ringThickness}
+                          progress={domain.progress}
+                          color={domain.ringColor}
+                        />
                         <View style={[styles.domainCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2, backgroundColor: domain.color }]}>
                           <Icon width={scaleSize(28)} height={scaleSize(28)} />
                           <View style={[styles.checkmarkWrap, { width: scaleSize(20), height: scaleSize(20), borderRadius: scaleSize(10), bottom: scaleSize(0), right: scaleSize(0) }]}>

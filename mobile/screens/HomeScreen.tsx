@@ -1077,6 +1077,20 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
           )}
         </ScrollView>
 
+        {!continueProgress && !latestCompletedSession && (
+          <View style={[styles.initialCtaFooter, { paddingHorizontal: padding, paddingBottom: scaleSize(16) }]}>
+            <Pressable
+              onPress={handleStartNew}
+              style={({ pressed }) => [
+                styles.progressPrimaryCta,
+                { height: scaleSize(54), borderRadius: scaleSize(28), opacity: pressed ? 0.9 : 1 },
+              ]}
+            >
+              <Text style={[styles.progressPrimaryText, { fontSize: scaleSize(16) }]}>Start Screening for free</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* FAB: always visible when a session is in progress; also visible post-screening as "New Screening" */}
         {(continueProgress || latestCompletedSession) && (
           <Pressable
@@ -1613,6 +1627,16 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 6,
     borderRadius: 999,
+  },
+  initialCtaFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.white,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E4E8',
+    paddingTop: 12,
   },
   progressPrimaryCta: {
     backgroundColor: '#535BD8',

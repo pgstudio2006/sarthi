@@ -330,7 +330,7 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
                               totalScore: screening.previousScore.totalScore,
                               result: screening.previousScore.result,
                               domainBreakdown: screening.previousScore.domainBreakdown,
-                              date: (screening.previousScore as any).date || '2 Jun 2026',
+                              date: (screening.previousScore as any).date || '',
                             }
                           : null,
                       };
