@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://YOUR_COOLIFY_DOMAIN/api"
+        "EXPO_PUBLIC_API_URL": "http://ztdijc7myffrm9kyweojcb1w.187.127.159.169.sslip.io/api"
       }
     },
     "production": {
@@ -18,7 +18,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://YOUR_COOLIFY_DOMAIN/api"
+        "EXPO_PUBLIC_API_URL": "http://ztdijc7myffrm9kyweojcb1w.187.127.159.169.sslip.io/api"
       }
     }
   },
