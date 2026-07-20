@@ -89,6 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   drawer: {
+    position: 'relative',
     backgroundColor: '#F9FAFB',
     borderTopLeftRadius: 24,
     borderBottomLeftRadius: 24,
@@ -143,7 +144,10 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.9)',
   },
   logoutBtn: {
-    marginTop: 20,
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 56,
     borderRadius: 26,
     borderWidth: 2,
     borderColor: '#D94C4C',
