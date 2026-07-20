@@ -41,6 +41,7 @@ export default function ChildSwitcherSheet({
   const { scaleSize, padding } = useResponsive();
   const { user, activeChildId, setActiveChildId } = useAuth();
   const children = user?.children || [];
+  const caregiver = user?.caregiverProfile;
 
   const handleSelect = (child: ChildProfile) => {
     setActiveChildId(child.id);
@@ -67,6 +68,16 @@ export default function ChildSwitcherSheet({
         <Text style={[styles.subtitle, { fontSize: scaleSize(13), paddingHorizontal: scaleSize(24), marginBottom: scaleSize(16) }]}>
           Add another child and track everyone's progress
         </Text>
+
+        <View style={[styles.caregiverCard, { marginHorizontal: scaleSize(20), padding: scaleSize(14), borderRadius: scaleSize(18), marginBottom: scaleSize(20) }]}> 
+          <View style={[styles.caregiverAvatar, { width: scaleSize(48), height: scaleSize(48), borderRadius: scaleSize(24) }]}> 
+            <AvatarIcon width={scaleSize(28)} height={scaleSize(28)} />
+          </View>
+          <View style={styles.caregiverInfo}>
+            <Text style={[styles.caregiverName, { fontSize: scaleSize(16) }]}>{caregiver?.name || 'Caregiver'}</Text>
+            <Text style={[styles.caregiverMeta, { fontSize: scaleSize(11) }]}>{caregiver?.role || 'Parent'}{caregiver?.email ? `  •  ${caregiver.email}` : ''}</Text>
+          </View>
+        </View>
 
         <ScrollView
           style={{ flex: 1 }}
@@ -101,10 +112,11 @@ export default function ChildSwitcherSheet({
                   </Pressable>
                   <Pressable
                     onPress={() => onEditChild(child)}
-                    style={[styles.editBtn, { width: scaleSize(32), height: scaleSize(32), borderRadius: scaleSize(16) }]}
-                    hitSlop={scaleSize(10)}
+                    style={styles.editDetailsBtn}
+                    hitSlop={scaleSize(8)}
                   >
-                    <EditIcon width={scaleSize(16)} height={scaleSize(16)} />
+                    <EditIcon width={scaleSize(14)} height={scaleSize(14)} />
+                    <Text style={[styles.editDetailsText, { fontSize: scaleSize(11) }]}>Edit Details</Text>
                   </Pressable>
                 </View>
               );
@@ -141,7 +153,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     paddingTop: 10,
     paddingBottom: 32,
-    maxHeight: '70%',
+    maxHeight: '78%',
   },
   handle: {
     backgroundColor: '#E2E4E8',
@@ -214,10 +226,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     color: colors.grey,
   },
-  editBtn: {
+  caregiverCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F3F2FF',
+    gap: 12,
+  },
+  caregiverAvatar: {
+    backgroundColor: '#E9E8FF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  caregiverInfo: { flex: 1, gap: 3 },
+  caregiverName: { fontFamily: 'Inter_700Bold', color: colors.mainBlack },
+  caregiverMeta: { fontFamily: 'Inter_400Regular', color: colors.grey },
+  editDetailsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 4,
+  },
+  editDetailsText: {
+    fontFamily: 'Inter_700Bold',
+    color: colors.primaryBlue,
+    textDecorationLine: 'underline',
   },
   addChildCard: {
     flexDirection: 'row',
