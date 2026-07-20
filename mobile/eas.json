@@ -21,10 +21,5 @@
         "EXPO_PUBLIC_API_URL": "http://ztdijc7myffrm9kyweojcb1w.187.127.159.169.sslip.io/api"
       }
     }
-  },
-  "update": {
-    "production": {
-      "channel": "production"
-    }
   }
 }
