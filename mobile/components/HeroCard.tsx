@@ -184,7 +184,6 @@ export default function HeroCard({ onPress, onContinue, onStartNew, childName = 
               ]}
             >
               <Text style={[styles.ctaText, { fontSize: scaleSize(16) }]}>Start Screening for free</Text>
-              <Text style={[styles.ctaArrow, { fontSize: scaleSize(20) }]}>→</Text>
             </Pressable>
           </View>
         )}
