@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   childCard: {
-    backgroundColor: colors.white,
+    display: 'none',
   },
   childCardRow: {
     flexDirection: 'row',
@@ -267,8 +267,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editTitle: {
-    fontFamily: 'Inter_800ExtraBold',
-    color: colors.mainBlack,
+    display: 'none',
   },
   fieldLabel: {
     fontFamily: 'Inter_700Bold',
