@@ -140,6 +140,7 @@ const DOMAIN_SCORE_CONFIG: Record<string, { maxScore: number; ranges: { label: s
 };
 
 const MAX_SCREENING_SCORE = 200;
+const RESCREEN_INTERVAL_DAYS = 90;
 
 function classifyScreeningResult(score: number) {
   if (score < 70) return 'Normal';
@@ -615,7 +616,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
             <View style={{ paddingHorizontal: padding, gap: scaleSize(16), marginTop: scaleSize(16) }}>
 
               {/* Re-screen banner */}
-              {daysSinceLastScreening !== null && daysSinceLastScreening >= 30 && (
+              {daysSinceLastScreening !== null && daysSinceLastScreening >= RESCREEN_INTERVAL_DAYS && (
                 <View style={[styles.rescreenBanner, { borderRadius: scaleSize(16), padding: scaleSize(16) }]}>
                   <Text style={[styles.rescreenMeta, { fontSize: scaleSize(11), marginBottom: scaleSize(4) }]}>
                     LAST SCREENED {daysSinceLastScreening} DAYS AGO
