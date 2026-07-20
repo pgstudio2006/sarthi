@@ -47,6 +47,8 @@ export default function NoAutismCompletionScreen({ navigation, route }: any) {
   const date = route?.params?.date ?? '8 June 2026';
   const screener = route?.params?.screener ?? 'Dhaval (Father)';
   const domainBreakdown = route?.params?.domainBreakdown;
+  const isRepeat = route?.params?.isRepeat ?? false;
+  const previousScore = route?.params?.previousScore ?? null;
   const progress = Math.min(1, Math.max(0, score / total));
 
   const domainsWithProgress = DOMAINS.map((domain) => {
@@ -66,6 +68,8 @@ export default function NoAutismCompletionScreen({ navigation, route }: any) {
       date,
       screener,
       domainBreakdown,
+      isRepeat,
+      previousScore,
     });
   };
 

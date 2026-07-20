@@ -334,7 +334,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     }
   }
 
-  const prevDateStr = previousScore?.date ?? '2 Jun 2026';
+  const prevDateStr = previousScore?.date ?? '';
 
   const isDomainOnTrack = (key: string) => {
     if (domainBreakdown) {
