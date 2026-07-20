@@ -20,5 +20,8 @@
         "EXPO_PUBLIC_API_URL": "https://YOUR_COOLIFY_DOMAIN/api"
       }
     }
+  },
+  "monorepo": {
+    "root": "../"
   }
 }
