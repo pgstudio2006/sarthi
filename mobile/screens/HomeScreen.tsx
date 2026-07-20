@@ -17,7 +17,7 @@ import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { getScreeningHistory, ChildProfile } from '../api/client';
+import { getScreeningHistory, getAiFaqs, ChildProfile, AiFaq } from '../api/client';
 import { getDynamicFAQs } from '../utils/qaLogic';
 import PrivacyInfoCard from '../components/PrivacyInfoCard';
 import HeroCard from '../components/HeroCard';
@@ -240,14 +240,21 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
 
   // Screening history and loading states
   const [screeningHistory, setScreeningHistory] = useState<any[]>([]);
+  const [aiFaqs, setAiFaqs] = useState<AiFaq[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const fetchHistory = useCallback(async () => {
     if (!child?.id) return;
     setHistoryLoading(true);
-    const result = await getScreeningHistory(child.id);
-    if (result.success) {
-      setScreeningHistory(result.data.sessions);
+    const [historyResult, aiResult] = await Promise.all([
+      getScreeningHistory(child.id),
+      getAiFaqs(child.id),
+    ]);
+    if (historyResult.success) {
+      setScreeningHistory(historyResult.data.sessions);
+    }
+    if (aiResult.success && aiResult.data.faqs.length === 10) {
+      setAiFaqs(aiResult.data.faqs);
     }
     setHistoryLoading(false);
   }, [child?.id]);
@@ -343,8 +350,9 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
 
   // Dynamic FAQs based on completed screening counts and active session status
   const dynamicFAQs = useMemo(() => {
+    if (aiFaqs.length === 10) return aiFaqs;
     return getDynamicFAQs(completedCount, activeSession !== undefined);
-  }, [completedCount, activeSession]);
+  }, [aiFaqs, completedCount, activeSession]);
 
   const LANGUAGES = ['English', 'Gujarati', 'Hindi', 'Kannada'];
 

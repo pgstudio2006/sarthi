@@ -234,6 +234,17 @@ export async function getLatestScreening(
   });
 }
 
+export type AiFaq = { title: string; body: string };
+
+export async function getAiFaqs(
+  childId: string
+): Promise<ApiResponse<{ mode: string; progress: number; completedDomains: string[]; faqs: AiFaq[] }>> {
+  return request('/ai/faqs', {
+    method: 'POST',
+    body: JSON.stringify({ childId }),
+  });
+}
+
 export async function getScreeningHistory(
   childId: string
 ): Promise<ApiResponse<{ sessions: ScreeningSession[] }>> {
