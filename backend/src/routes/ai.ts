@@ -103,7 +103,7 @@ async function generateWithOpenRouter(mode: string, childAgeInMonths: number | n
       'X-Title': 'Saarathi Care',
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
+      model: process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3-ultra-550b-a55b:free',
       temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [
