@@ -35,6 +35,10 @@ async function ensureDevUser() {
 }
 
 app.listen(PORT, async () => {
-  await ensureDevUser();
+  try {
+    await ensureDevUser();
+  } catch (err) {
+    console.error('[AUTH BYPASS] Failed to create dev-user:', err);
+  }
   console.log(`Sarthi backend running on http://localhost:${PORT}`);
 });

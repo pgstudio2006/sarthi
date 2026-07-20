@@ -57,7 +57,7 @@ export function ScreeningProvider({ children }: { children: ReactNode }) {
               ...prev.data.score,
               date: prev.data.session.completedAt
                 ? new Date(prev.data.session.completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                : '2 Jun 2026'
+                : ''
             };
             setPreviousScore(scoreWithDate);
           }

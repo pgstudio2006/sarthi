@@ -108,7 +108,7 @@ export default function BeginScreeningScreen({ navigation }: { navigation: any }
               {screening.error ? (
                 <Text style={[styles.errorText, { fontSize: 12 * scale, marginBottom: 12 * scale }]}>{screening.error}</Text>
               ) : null}
-              <PrimaryButton label="Start Screening" onPress={handleStart} disabled={screening.loading || !childId} />
+              <PrimaryButton label="Start Screening" onPress={handleStart} disabled={screening.loading} />
             </View>
           </ScrollView>
         </View>
