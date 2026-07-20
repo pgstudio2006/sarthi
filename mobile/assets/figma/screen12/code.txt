@@ -1,0 +1,463 @@
+import * as React from "react";
+import {Text, StyleSheet, View, Image} from "react-native";
+
+const WelcomeNameRoleTeacher = () => {
+  	
+  	return (
+    		<View style={styles.welcomeNameRoleTeacher}>
+      			<View style={[styles.wrapper, styles.wrapperSpaceBlock]}>
+        				<Text style={[styles.text, styles.textTypo]}>9:41</Text>
+      			</View>
+      			<View style={[styles.frameParent, styles.wrapperPosition]}>
+        				<View style={[styles.frameWrapper, styles.frameWrapperLayout]}>
+          					<View style={styles.frameGroup}>
+            						<View style={styles.frameContainerFlexBox}>
+              							<Image style={styles.frameChild} resizeMode="cover" />
+              							<Text style={styles.saarathi}>SAARATHI</Text>
+            						</View>
+            						<View style={styles.frame}>
+              							<View style={styles.skipWrapper}>
+                								<Text style={[styles.skip, styles.skipTypo]}>Skip</Text>
+              							</View>
+            						</View>
+          					</View>
+        				</View>
+        				<View style={styles.welcomeCardParent}>
+          					<View style={styles.welcomeCard}>
+            						<View style={styles.rectangleParent}>
+              							<View style={styles.rectangle} />
+              							<View style={styles.groupParent}>
+                								<Image style={styles.frameItem} resizeMode="cover" />
+                								<View style={styles.youreInLetsCreateYourPWrapper}>
+                  									<Text style={[styles.youreInLets, styles.bangaloreClr]}>You're in! {'\n'}Let’s create your profile.</Text>
+                    										</View>
+                    										</View>
+                    										</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.cityTypo]}>your full name</Text>
+                      											<View style={[styles.nameInput, styles.dobStripBorder]}>
+                        												<View style={[styles.dhavalGandhiParent, styles.frameContainerFlexBox]}>
+                          													<Text style={[styles.dhavalGandhi, styles.textTypo]}>Dhaval Gandhi</Text>
+                          													<View style={styles.rectangle2} />
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.cityTypo]}>Email</Text>
+                      											<View style={[styles.nameInput, styles.dobStripBorder]}>
+                        												<View style={[styles.dhavalGandhiParent, styles.frameContainerFlexBox]}>
+                          													<Text style={[styles.dhavalGandhi, styles.textTypo]}>dhaval.gandhi027@gmail.com</Text>
+                          													<View style={styles.rectangle2} />
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.frameView}>
+                      											<View style={styles.frameParent2}>
+                        												<View style={styles.cityWrapper}>
+                          													<Text style={[styles.city, styles.cityTypo]}>{`CITY `}</Text>
+                        												</View>
+                        												<View style={[styles.dobStrip, styles.dobStripBorder]}>
+                          													<View style={styles.bangaloreParent}>
+                            														<Text style={[styles.bangalore, styles.bangaloreClr]}>Bangalore</Text>
+                            														<Image style={styles.locationOnIcon} resizeMode="cover" />
+                          													</View>
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.cityTypo]}>relationship with child</Text>
+                      											<View style={styles.yourFullNameParent}>
+                        												<View style={styles.roleMotherParent}>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={[styles.mother, styles.motherLayout]}>Mother</Text>
+                          													</View>
+                          													<View style={[styles.roleTherapist, styles.roleFlexBox]}>
+                            														<Text style={[styles.mother, styles.motherLayout]}>Father</Text>
+                          													</View>
+                          													<View style={[styles.roleTherapist, styles.roleFlexBox]}>
+                            														<Text style={[styles.mother, styles.motherLayout]}>Therapist</Text>
+                          													</View>
+                          													<View style={[styles.roleFather, styles.roleFlexBox]}>
+                            														<Text style={[styles.teacher, styles.teacherTypo]}>Teacher</Text>
+                          													</View>
+                        												</View>
+                        												<View style={styles.roleTeacherParent}>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={[styles.mother, styles.motherLayout]}>Doctor</Text>
+                          													</View>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={[styles.mother, styles.motherLayout]}>Others</Text>
+                          													</View>
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.cityTypo]}>ROLE</Text>
+                      											<View style={styles.frameView}>
+                        												<View style={styles.frameWrapperLayout}>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={[styles.mother, styles.motherLayout]}>Special Educator</Text>
+                          													</View>
+                          													<View style={[styles.roleFather, styles.roleFlexBox]}>
+                            														<Text style={[styles.shadowTeacher, styles.teacherTypo]}>Shadow Teacher</Text>
+                          													</View>
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.cityTypo]}>SCHOOL or INSTITUTE NAME</Text>
+                      											<View style={[styles.nameInput, styles.dobStripBorder]}>
+                        												<View style={[styles.dhavalGandhiParent, styles.frameContainerFlexBox]}>
+                          													<Text style={[styles.dhavalGandhi, styles.textTypo]}>Xyz</Text>
+                          													<View style={styles.rectangle2} />
+                        												</View>
+                      											</View>
+                    										</View>
+                    										</View>
+                    										</View>
+                    										<View style={styles.ctaContinue}>
+                      											<Text style={[styles.continue, styles.cityTypo]}>Continue</Text>
+                    										</View>
+                    										</View>);
+                    										};
+                    										
+                    										const styles = StyleSheet.create({
+                      											wrapperSpaceBlock: {
+                        												paddingHorizontal: 20,
+                        												backgroundColor: "#fff"
+                      											},
+                      											textTypo: {
+                        												textAlign: "left",
+                        												color: "#18182d",
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600"
+                      											},
+                      											wrapperPosition: {
+                        												width: 390,
+                        												left: 0,
+                        												position: "absolute"
+                      											},
+                      											frameWrapperLayout: {
+                        												height: 56,
+                        												alignSelf: "stretch"
+                      											},
+                      											skipTypo: {
+                        												color: "#6b7180",
+                        												fontSize: 12,
+                        												textAlign: "left"
+                      											},
+                      											bangaloreClr: {
+                        												color: "#2d2a3a",
+                        												textAlign: "left"
+                      											},
+                      											cityTypo: {
+                        												fontFamily: "Inter-Bold",
+                        												fontWeight: "700"
+                      											},
+                      											dobStripBorder: {
+                        												borderWidth: 2,
+                        												borderColor: "#5963e1"
+                      											},
+                      											frameContainerFlexBox: {
+                        												gap: 4,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											roleBorder: {
+                        												borderWidth: 2,
+                        												borderColor: "#e2e4e8",
+                        												backgroundColor: "#fff"
+                      											},
+                      											motherLayout: {
+                        												display: "flex",
+                        												width: 166,
+                        												justifyContent: "center",
+                        												height: 56,
+                        												alignItems: "center",
+                        												left: 0,
+                        												top: 0
+                      											},
+                      											roleFlexBox: {
+                        												flex: 1,
+                        												borderStyle: "solid",
+                        												borderRadius: 16,
+                        												alignSelf: "stretch",
+                        												overflow: "hidden"
+                      											},
+                      											teacherTypo: {
+                        												color: "#5963e1",
+                        												fontSize: 14,
+                        												fontFamily: "Inter-Bold",
+                        												fontWeight: "700",
+                        												textAlign: "center",
+                        												position: "absolute"
+                      											},
+                      											welcomeNameRoleTeacher: {
+                        												height: 1107,
+                        												width: "100%",
+                        												overflow: "hidden",
+                        												backgroundColor: "#fff"
+                      											},
+                      											wrapper: {
+                        												height: 44,
+                        												paddingVertical: 14,
+                        												alignItems: "center",
+                        												flexDirection: "row",
+                        												width: 390,
+                        												left: 0,
+                        												position: "absolute",
+                        												top: 0,
+                        												paddingHorizontal: 20,
+                        												overflow: "hidden"
+                      											},
+                      											text: {
+                        												fontSize: 15
+                      											},
+                      											frameParent: {
+                        												top: 44,
+                        												gap: 8,
+                        												alignItems: "flex-start"
+                      											},
+                      											frameWrapper: {
+                        												paddingVertical: 15,
+                        												alignItems: "flex-start",
+                        												paddingHorizontal: 20,
+                        												backgroundColor: "#fff"
+                      											},
+                      											frameGroup: {
+                        												width: 350,
+                        												justifyContent: "space-between",
+                        												gap: 20,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											frameChild: {
+                        												width: 28,
+                        												borderRadius: 15,
+                        												height: 28
+                      											},
+                      											saarathi: {
+                        												letterSpacing: 0.4,
+                        												fontWeight: "800",
+                        												fontFamily: "Inter-ExtraBold",
+                        												color: "#373e8b",
+                        												textAlign: "center",
+                        												fontSize: 18
+                      											},
+                      											frame: {
+                        												borderRadius: 8,
+                        												backgroundColor: "#f4f4f4",
+                        												paddingVertical: 6,
+                        												display: "none",
+                        												paddingHorizontal: 16,
+                        												justifyContent: "center",
+                        												alignItems: "center"
+                      											},
+                      											skipWrapper: {
+                        												width: 27,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											skip: {
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600"
+                      											},
+                      											welcomeCardParent: {
+                        												gap: 32,
+                        												alignSelf: "stretch",
+                        												alignItems: "center"
+                      											},
+                      											welcomeCard: {
+                        												backgroundColor: "#f3f2ff",
+                        												alignSelf: "stretch",
+                        												alignItems: "flex-start",
+                        												overflow: "hidden"
+                      											},
+                      											rectangleParent: {
+                        												gap: 12,
+                        												alignSelf: "stretch",
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											rectangle: {
+                        												height: 83,
+                        												width: 12,
+                        												backgroundColor: "#5963e1"
+                      											},
+                      											groupParent: {
+                        												gap: 12,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											frameItem: {
+                        												height: 48,
+                        												width: 48
+                      											},
+                      											youreInLetsCreateYourPWrapper: {
+                        												width: 143,
+                        												alignItems: "flex-start"
+                      											},
+                      											youreInLets: {
+                        												lineHeight: 24,
+                        												fontFamily: "Inter-Bold",
+                        												fontWeight: "700",
+                        												alignSelf: "flex-start",
+                        												fontSize: 18
+                      											},
+                      											yourFullNameParent: {
+                        												width: 342,
+                        												gap: 12,
+                        												alignItems: "flex-start"
+                      											},
+                      											yourFullName: {
+                        												textTransform: "uppercase",
+                        												color: "#6b7180",
+                        												fontSize: 12,
+                        												textAlign: "left",
+                        												alignSelf: "stretch"
+                      											},
+                      											nameInput: {
+                        												paddingVertical: 12,
+                        												borderStyle: "solid",
+                        												borderColor: "#5963e1",
+                        												alignSelf: "stretch",
+                        												overflow: "hidden",
+                        												backgroundColor: "#fff",
+                        												borderRadius: 16,
+                        												paddingHorizontal: 16,
+                        												alignItems: "flex-start"
+                      											},
+                      											dhavalGandhiParent: {
+                        												alignSelf: "stretch"
+                      											},
+                      											dhavalGandhi: {
+                        												fontSize: 16
+                      											},
+                      											rectangle2: {
+                        												width: 2,
+                        												borderRadius: 1,
+                        												backgroundColor: "#5963e1",
+                        												height: 28
+                      											},
+                      											frameView: {
+                        												width: 342,
+                        												alignItems: "flex-start"
+                      											},
+                      											frameParent2: {
+                        												gap: 12,
+                        												alignSelf: "stretch",
+                        												alignItems: "flex-start"
+                      											},
+                      											cityWrapper: {
+                        												alignSelf: "stretch",
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											city: {
+                        												color: "#6b7180",
+                        												fontSize: 12,
+                        												textAlign: "left"
+                      											},
+                      											dobStrip: {
+                        												height: 52,
+                        												borderRadius: 14,
+                        												borderStyle: "solid",
+                        												borderColor: "#5963e1",
+                        												alignSelf: "stretch",
+                        												overflow: "hidden",
+                        												backgroundColor: "#fff"
+                      											},
+                      											bangaloreParent: {
+                        												top: 14,
+                        												left: 16,
+                        												gap: 96,
+                        												alignItems: "center",
+                        												flexDirection: "row",
+                        												position: "absolute"
+                      											},
+                      											bangalore: {
+                        												width: 190,
+                        												fontSize: 16,
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600"
+                      											},
+                      											locationOnIcon: {
+                        												height: 24,
+                        												width: 24
+                      											},
+                      											roleMotherParent: {
+                        												height: 124,
+                        												alignSelf: "stretch"
+                      											},
+                      											roleMother: {
+                        												width: 166,
+                        												borderWidth: 2,
+                        												borderColor: "#e2e4e8",
+                        												borderStyle: "solid",
+                        												borderRadius: 16,
+                        												height: 56,
+                        												overflow: "hidden"
+                      											},
+                      											mother: {
+                        												fontSize: 14,
+                        												display: "flex",
+                        												textAlign: "center",
+                        												color: "#18182d",
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600",
+                        												position: "absolute"
+                      											},
+                      											roleTherapist: {
+                        												borderWidth: 2,
+                        												borderColor: "#e2e4e8",
+                        												backgroundColor: "#fff"
+                      											},
+                      											roleFather: {
+                        												backgroundColor: "#eeefff",
+                        												borderWidth: 2,
+                        												borderColor: "#5963e1"
+                      											},
+                      											teacher: {
+                        												top: 20,
+                        												left: 55
+                      											},
+                      											roleTeacherParent: {
+                        												alignSelf: "flex-start",
+                        												gap: 12,
+                        												alignItems: "flex-start",
+                        												flexDirection: "row"
+                      											},
+                      											shadowTeacher: {
+                        												display: "flex",
+                        												width: 166,
+                        												justifyContent: "center",
+                        												height: 56,
+                        												alignItems: "center",
+                        												left: 0,
+                        												top: 0
+                      											},
+                      											ctaContinue: {
+                        												right: 24,
+                        												bottom: 20,
+                        												borderRadius: 28,
+                        												backgroundColor: "#535bd8",
+                        												height: 54,
+                        												paddingHorizontal: 0,
+                        												paddingVertical: 18,
+                        												width: 342,
+                        												justifyContent: "center",
+                        												alignItems: "center",
+                        												flexDirection: "row",
+                        												position: "absolute",
+                        												overflow: "hidden"
+                      											},
+                      											continue: {
+                        												color: "#fff",
+                        												fontSize: 16,
+                        												textAlign: "center"
+                      											}
+                    										});
+                    										
+                    										export default WelcomeNameRoleTeacher;
+                    										

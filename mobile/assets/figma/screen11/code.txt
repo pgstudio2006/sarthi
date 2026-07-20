@@ -1,0 +1,457 @@
+import * as React from "react";
+import {Text, StyleSheet, View, Image} from "react-native";
+
+const WelcomeNameRoleTherapist = () => {
+  	
+  	return (
+    		<View style={styles.welcomeNameRoleTherapist}>
+      			<View style={styles.wrapper}>
+        				<Text style={[styles.text, styles.textTypo]}>9:41</Text>
+      			</View>
+      			<View style={styles.frameParent}>
+        				<View style={styles.frameWrapper}>
+          					<View style={styles.frameGroup}>
+            						<View style={styles.frameContainerFlexBox}>
+              							<Image style={styles.frameChild} resizeMode="cover" />
+              							<Text style={styles.saarathi}>SAARATHI</Text>
+            						</View>
+            						<View style={styles.frame}>
+              							<View style={styles.skipWrapper}>
+                								<Text style={[styles.skip, styles.skipTypo]}>Skip</Text>
+              							</View>
+            						</View>
+          					</View>
+        				</View>
+        				<View style={styles.welcomeCardParent}>
+          					<View style={styles.welcomeCard}>
+            						<View style={styles.rectangleParent}>
+              							<View style={styles.rectangle} />
+              							<View style={styles.groupParent}>
+                								<Image style={styles.frameItem} resizeMode="cover" />
+                								<View style={styles.youreInLetsCreateYourPWrapper}>
+                  									<Text style={[styles.youreInLets, styles.bangaloreClr]}>You're in! {'\n'}Let’s create your profile.</Text>
+                    										</View>
+                    										</View>
+                    										</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.emailTypo]}>your full name</Text>
+                      											<View style={[styles.nameInput, styles.dobStripBorder]}>
+                        												<View style={[styles.dhavalGandhiParent, styles.frameContainerFlexBox]}>
+                          													<Text style={[styles.dhavalGandhi, styles.textTypo]}>Dhaval Gandhi</Text>
+                          													<View style={styles.rectangle2} />
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.email, styles.emailTypo]}>Email</Text>
+                      											<View style={[styles.nameInput, styles.dobStripBorder]}>
+                        												<View style={[styles.dhavalGandhiParent, styles.frameContainerFlexBox]}>
+                          													<Text style={[styles.dhavalGandhi, styles.textTypo]}>dhaval.gandhi027@gmail.com</Text>
+                          													<View style={styles.rectangle2} />
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.frameView}>
+                      											<View style={styles.frameParent2}>
+                        												<View style={styles.cityWrapper}>
+                          													<Text style={[styles.city, styles.cityTypo]}>CITY</Text>
+                        												</View>
+                        												<View style={[styles.dobStrip, styles.dobStripBorder]}>
+                          													<View style={styles.bangaloreParent}>
+                            														<Text style={[styles.bangalore, styles.bangaloreClr]}>Bangalore</Text>
+                            														<Image style={styles.locationOnIcon} resizeMode="cover" />
+                          													</View>
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.emailTypo]}>relationship with child</Text>
+                      											<View style={styles.yourFullNameParent}>
+                        												<View style={styles.roleMotherParent}>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={styles.mother}>Mother</Text>
+                          													</View>
+                          													<View style={[styles.roleTherapist, styles.roleFlexBox]}>
+                            														<Text style={styles.mother}>Father</Text>
+                          													</View>
+                          													<View style={[styles.roleFather, styles.roleFlexBox]}>
+                            														<Text style={[styles.therapist, styles.therapistTypo]}>Therapist</Text>
+                          													</View>
+                          													<View style={[styles.roleTherapist, styles.roleFlexBox]}>
+                            														<Text style={styles.mother}>Teacher</Text>
+                          													</View>
+                        												</View>
+                        												<View style={styles.roleTeacherParent}>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={styles.mother}>Doctor</Text>
+                          													</View>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={styles.mother}>Others</Text>
+                          													</View>
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.emailTypo]}>Speciality</Text>
+                      											<View style={styles.frameView}>
+                        												<View style={styles.roleMotherParent}>
+                          													<View style={[styles.roleMother, styles.roleBorder]}>
+                            														<Text style={styles.mother}>Behaviour Therapy</Text>
+                          													</View>
+                          													<View style={[styles.roleTherapist, styles.roleFlexBox]}>
+                            														<Text style={styles.mother}>Occupational Therapy</Text>
+                          													</View>
+                          													<View style={[styles.roleFather, styles.roleFlexBox]}>
+                            														<Text style={[styles.speechTherapy, styles.therapistTypo]}>Speech Therapy</Text>
+                          													</View>
+                        												</View>
+                      											</View>
+                    										</View>
+                    										<View style={styles.yourFullNameParent}>
+                      											<Text style={[styles.yourFullName, styles.emailTypo]}>Therapy centre</Text>
+                      											<View style={[styles.nameInput, styles.dobStripBorder]}>
+                        												<View style={[styles.dhavalGandhiParent, styles.frameContainerFlexBox]}>
+                          													<Text style={[styles.dhavalGandhi, styles.textTypo]}>Bumblebee child care</Text>
+                          													<View style={styles.rectangle2} />
+                        												</View>
+                      											</View>
+                    										</View>
+                    										</View>
+                    										</View>
+                    										<View style={styles.ctaContinue}>
+                      											<Text style={[styles.continue, styles.cityTypo]}>Continue</Text>
+                    										</View>
+                    										</View>);
+                    										};
+                    										
+                    										const styles = StyleSheet.create({
+                      											textTypo: {
+                        												textAlign: "left",
+                        												color: "#18182d",
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600"
+                      											},
+                      											skipTypo: {
+                        												color: "#6b7180",
+                        												fontSize: 12,
+                        												textAlign: "left"
+                      											},
+                      											bangaloreClr: {
+                        												color: "#2d2a3a",
+                        												textAlign: "left"
+                      											},
+                      											emailTypo: {
+                        												textTransform: "uppercase",
+                        												fontFamily: "Inter-Bold",
+                        												fontWeight: "700",
+                        												color: "#6b7180",
+                        												fontSize: 12,
+                        												textAlign: "left"
+                      											},
+                      											dobStripBorder: {
+                        												borderWidth: 2,
+                        												borderColor: "#5963e1"
+                      											},
+                      											frameContainerFlexBox: {
+                        												gap: 4,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											cityTypo: {
+                        												fontFamily: "Inter-Bold",
+                        												fontWeight: "700"
+                      											},
+                      											roleBorder: {
+                        												borderWidth: 2,
+                        												borderColor: "#e2e4e8",
+                        												backgroundColor: "#fff"
+                      											},
+                      											roleFlexBox: {
+                        												flex: 1,
+                        												borderStyle: "solid",
+                        												borderRadius: 16,
+                        												alignSelf: "stretch",
+                        												overflow: "hidden"
+                      											},
+                      											therapistTypo: {
+                        												color: "#5963e1",
+                        												top: 20,
+                        												fontSize: 14,
+                        												fontFamily: "Inter-Bold",
+                        												fontWeight: "700",
+                        												textAlign: "center",
+                        												position: "absolute"
+                      											},
+                      											welcomeNameRoleTherapist: {
+                        												height: 1183,
+                        												width: "100%",
+                        												overflow: "hidden",
+                        												backgroundColor: "#fff"
+                      											},
+                      											wrapper: {
+                        												height: 44,
+                        												paddingVertical: 14,
+                        												paddingHorizontal: 20,
+                        												top: 0,
+                        												alignItems: "center",
+                        												flexDirection: "row",
+                        												width: 390,
+                        												left: 0,
+                        												position: "absolute",
+                        												overflow: "hidden",
+                        												backgroundColor: "#fff"
+                      											},
+                      											text: {
+                        												fontSize: 15
+                      											},
+                      											frameParent: {
+                        												top: 44,
+                        												gap: 8,
+                        												alignItems: "flex-start",
+                        												width: 390,
+                        												left: 0,
+                        												position: "absolute"
+                      											},
+                      											frameWrapper: {
+                        												paddingVertical: 15,
+                        												height: 56,
+                        												alignSelf: "stretch",
+                        												alignItems: "flex-start",
+                        												paddingHorizontal: 20,
+                        												backgroundColor: "#fff"
+                      											},
+                      											frameGroup: {
+                        												width: 350,
+                        												justifyContent: "space-between",
+                        												gap: 20,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											frameChild: {
+                        												width: 28,
+                        												borderRadius: 15,
+                        												height: 28
+                      											},
+                      											saarathi: {
+                        												letterSpacing: 0.4,
+                        												fontWeight: "800",
+                        												fontFamily: "Inter-ExtraBold",
+                        												color: "#373e8b",
+                        												textAlign: "center",
+                        												fontSize: 18
+                      											},
+                      											frame: {
+                        												borderRadius: 8,
+                        												backgroundColor: "#f4f4f4",
+                        												paddingVertical: 6,
+                        												display: "none",
+                        												paddingHorizontal: 16,
+                        												justifyContent: "center",
+                        												alignItems: "center"
+                      											},
+                      											skipWrapper: {
+                        												width: 27,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											skip: {
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600"
+                      											},
+                      											welcomeCardParent: {
+                        												gap: 32,
+                        												alignSelf: "stretch",
+                        												alignItems: "center"
+                      											},
+                      											welcomeCard: {
+                        												backgroundColor: "#f3f2ff",
+                        												alignSelf: "stretch",
+                        												alignItems: "flex-start",
+                        												overflow: "hidden"
+                      											},
+                      											rectangleParent: {
+                        												gap: 12,
+                        												alignSelf: "stretch",
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											rectangle: {
+                        												height: 83,
+                        												width: 12,
+                        												backgroundColor: "#5963e1"
+                      											},
+                      											groupParent: {
+                        												gap: 12,
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											frameItem: {
+                        												height: 48,
+                        												width: 48
+                      											},
+                      											youreInLetsCreateYourPWrapper: {
+                        												width: 143,
+                        												alignItems: "flex-start"
+                      											},
+                      											youreInLets: {
+                        												width: 270,
+                        												lineHeight: 24,
+                        												fontFamily: "Inter-Bold",
+                        												fontWeight: "700",
+                        												fontSize: 18
+                      											},
+                      											yourFullNameParent: {
+                        												width: 342,
+                        												gap: 12,
+                        												alignItems: "flex-start"
+                      											},
+                      											yourFullName: {
+                        												alignSelf: "stretch"
+                      											},
+                      											nameInput: {
+                        												paddingVertical: 12,
+                        												borderStyle: "solid",
+                        												borderColor: "#5963e1",
+                        												alignSelf: "stretch",
+                        												overflow: "hidden",
+                        												backgroundColor: "#fff",
+                        												borderRadius: 16,
+                        												paddingHorizontal: 16,
+                        												alignItems: "flex-start"
+                      											},
+                      											dhavalGandhiParent: {
+                        												alignSelf: "stretch"
+                      											},
+                      											dhavalGandhi: {
+                        												fontSize: 16
+                      											},
+                      											rectangle2: {
+                        												width: 2,
+                        												borderRadius: 1,
+                        												backgroundColor: "#5963e1",
+                        												height: 28
+                      											},
+                      											email: {
+                        												alignSelf: "flex-start"
+                      											},
+                      											frameView: {
+                        												width: 342,
+                        												alignItems: "flex-start"
+                      											},
+                      											frameParent2: {
+                        												gap: 12,
+                        												alignSelf: "stretch",
+                        												alignItems: "flex-start"
+                      											},
+                      											cityWrapper: {
+                        												alignSelf: "stretch",
+                        												alignItems: "center",
+                        												flexDirection: "row"
+                      											},
+                      											city: {
+                        												color: "#6b7180",
+                        												fontSize: 12,
+                        												textAlign: "left"
+                      											},
+                      											dobStrip: {
+                        												height: 52,
+                        												borderRadius: 14,
+                        												borderStyle: "solid",
+                        												borderColor: "#5963e1",
+                        												alignSelf: "stretch",
+                        												overflow: "hidden",
+                        												backgroundColor: "#fff"
+                      											},
+                      											bangaloreParent: {
+                        												top: 14,
+                        												left: 16,
+                        												gap: 96,
+                        												alignItems: "center",
+                        												flexDirection: "row",
+                        												position: "absolute"
+                      											},
+                      											bangalore: {
+                        												width: 190,
+                        												fontSize: 16,
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600"
+                      											},
+                      											locationOnIcon: {
+                        												height: 24,
+                        												width: 24
+                      											},
+                      											roleMotherParent: {
+                        												height: 124,
+                        												alignSelf: "stretch"
+                      											},
+                      											roleMother: {
+                        												width: 166,
+                        												borderWidth: 2,
+                        												borderColor: "#e2e4e8",
+                        												borderStyle: "solid",
+                        												borderRadius: 16,
+                        												height: 56,
+                        												overflow: "hidden"
+                      											},
+                      											mother: {
+                        												display: "flex",
+                        												fontSize: 14,
+                        												width: 166,
+                        												justifyContent: "center",
+                        												textAlign: "center",
+                        												height: 56,
+                        												color: "#18182d",
+                        												fontFamily: "Inter-SemiBold",
+                        												fontWeight: "600",
+                        												alignItems: "center",
+                        												left: 0,
+                        												top: 0,
+                        												position: "absolute"
+                      											},
+                      											roleTherapist: {
+                        												borderWidth: 2,
+                        												borderColor: "#e2e4e8",
+                        												backgroundColor: "#fff"
+                      											},
+                      											roleFather: {
+                        												backgroundColor: "#eeefff",
+                        												borderWidth: 2,
+                        												borderColor: "#5963e1"
+                      											},
+                      											therapist: {
+                        												left: 50
+                      											},
+                      											roleTeacherParent: {
+                        												alignSelf: "flex-start",
+                        												gap: 12,
+                        												alignItems: "flex-start",
+                        												flexDirection: "row"
+                      											},
+                      											speechTherapy: {
+                        												left: 27
+                      											},
+                      											ctaContinue: {
+                        												right: 24,
+                        												bottom: 24,
+                        												borderRadius: 28,
+                        												backgroundColor: "#535bd8",
+                        												height: 54,
+                        												paddingHorizontal: 0,
+                        												paddingVertical: 18,
+                        												width: 342,
+                        												justifyContent: "center",
+                        												alignItems: "center",
+                        												flexDirection: "row",
+                        												position: "absolute",
+                        												overflow: "hidden"
+                      											},
+                      											continue: {
+                        												color: "#fff",
+                        												fontSize: 16,
+                        												textAlign: "center"
+                      											}
+                    										});
+                    										
+                    										export default WelcomeNameRoleTherapist;
+                    										

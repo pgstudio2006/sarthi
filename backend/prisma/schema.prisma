@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  caregiverProfile CaregiverProfile?
+  children         ChildProfile[]
+  otps             Otp[]
+  screenings       ScreeningSession[]
+}
+
+model CaregiverProfile {
+  id          String @id @default(uuid())
+  userId      String @unique
+  name        String
+  role        String
+  email       String?
+  location    String?
+  relation    String?
+  speciality  String?
+  institution String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChildProfile {
+  id            String   @id @default(uuid())
+  userId        String
+  name          String
+  dateOfBirth   String
+  gender        String
+  birthContext  String
+  ageInMonths   Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screenings  ScreeningSession[]
+}
+
+model ScreeningSession {
+  id                String   @id @default(uuid())
+  userId            String
+  childId           String
+  status            String   @default("in_progress")
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  totalScore        Int?
+  result            String?
+  previousSessionId String?
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  child     ChildProfile @relation(fields: [childId], references: [id], onDelete: Cascade)
+  responses ScreeningResponse[]
+
+  @@index([userId])
+  @@index([childId])
+}
+
+model ScreeningResponse {
+  id            String @id @default(uuid())
+  sessionId     String
+  domain        String
+  questionIndex Int
+  score         Int
+
+  session ScreeningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model Otp {
+  id        String   @id @default(uuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+}
