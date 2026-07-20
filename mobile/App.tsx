@@ -99,13 +99,6 @@ export default function App() {
           <Stack.Screen
             name="CreateProfile"
             component={CreateProfileScreen}
-            initialParams={{
-              initialChildName: 'Nitya Gandhi',
-              initialDob: '2020-05-15',
-              initialGender: 'Female',
-              initialBirthContext: 'Normal Birth',
-              nextRoute: 'Home',
-            }}
           />
           <Stack.Screen
             name="BeginScreening"

@@ -49,10 +49,10 @@ export default function CreateProfileScreen({
   };
 }) {
   const {
-    initialChildName = 'Nitya Gandhi',
-    initialDob = '15 May 2020',
-    initialGender = 'Female',
-    initialBirthContext = 'Normal Birth',
+    initialChildName = '',
+    initialDob = '',
+    initialGender = '',
+    initialBirthContext = '',
     nextRoute = 'NextOnboarding',
   } = route?.params ?? {};
 
@@ -62,15 +62,15 @@ export default function CreateProfileScreen({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const parsedInitialDob = parseDateInput(initialDob) ?? new Date(2020, 4, 15);
+  const parsedInitialDob = initialDob ? parseDateInput(initialDob) : undefined;
   const [childName, setChildName] = useState(initialChildName);
-  const [dob, setDob] = useState(toISODate(parsedInitialDob));
-  const [gender, setGender] = useState<string | null>(initialGender);
-  const [birthContext, setBirthContext] = useState<string | null>(initialBirthContext);
+  const [dob, setDob] = useState(parsedInitialDob ? toISODate(parsedInitialDob) : '');
+  const [gender, setGender] = useState<string | null>(initialGender || null);
+  const [birthContext, setBirthContext] = useState<string | null>(initialBirthContext || null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const dobDisplay = formatISODateDisplay(dob);
-  const ageLabel = calculateAgeLabel(dob) === 'Age' ? '6 yrs 2 mos' : calculateAgeLabel(dob);
+  const ageLabel = calculateAgeLabel(dob);
 
   const isValid = childName.length > 0 && dob.length > 0 && gender !== null && birthContext !== null;
 
