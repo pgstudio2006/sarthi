@@ -121,11 +121,6 @@ router.post('/:id/submit', async (req, res) => {
     return;
   }
 
-  if (session.status !== 'in_progress') {
-    res.status(400).json({ error: 'Session is not in progress' });
-    return;
-  }
-
   await prisma.screeningResponse.deleteMany({ where: { sessionId } });
   await prisma.screeningResponse.createMany({
     data: parse.data.responses.map((r) => ({ ...r, sessionId })),
@@ -149,12 +144,7 @@ router.post('/:id/submit', async (req, res) => {
 
 router.get('/latest', async (req, res) => {
   const userId = req.user!.userId;
-  const childIdParse = z.string().safeParse(req.query.childId);
-  if (!childIdParse.success) {
-    res.status(400).json({ error: 'childId query parameter is required' });
-    return;
-  }
-  const childId = childIdParse.data;
+  const childId = z.string().parse(req.query.childId);
 
   const session = await prisma.screeningSession.findFirst({
     where: { userId, childId, status: 'completed' },

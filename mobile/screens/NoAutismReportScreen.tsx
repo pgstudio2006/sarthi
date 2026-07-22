@@ -8,12 +8,15 @@ import {
   Image,
   Share,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreening } from '../context/ScreeningContext';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import { generateScreeningReportPDF } from '../utils/reportPdf';
+import Svg, { Line, Circle, Path, Rect, Text as SvgText, G } from 'react-native-svg';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
 import CalendarIcon from '../assets/figma/screen28/calendar_month.svg';
 import FlagIcon from '../assets/figma/screen28/Frame-10.svg';
@@ -25,7 +28,6 @@ import ChevronUp from '../assets/figma/screen28/Frame-6.svg';
 import CheckmarkIcon from '../assets/figma/screen28/Checkmark1.png';
 import PersonIcon from '../assets/figma/screen27/Frame-7.svg';
 import ResultFlagIcon from '../assets/figma/screen28/Frame-10.svg';
-import AddCircleIcon from '../assets/figma/screen35/add_circle.svg';
 
 import SocialIcon from '../assets/figma/screen28/Frame-7.svg';
 import EmotionIcon from '../assets/figma/screen28/Frame-5.svg';
@@ -242,16 +244,79 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
 
 export default function NoAutismReportScreen({ navigation, route }: any) {
   const { scaleSize, padding } = useResponsive();
+  const { width } = useWindowDimensions();
+  const { t } = useTranslation();
   const screening = useScreening();
 
-  const childName = route?.params?.childName ?? 'Nitya';
-  const score = route?.params?.score ?? 60;
-  const total = route?.params?.total ?? 200;
-  const result = route?.params?.result ?? 'No Signs of Autism';
-  const date = route?.params?.date ?? '8 June 2026';
-  const screener = route?.params?.screener ?? 'Dhaval (Father)';
+  const childName = route?.params?.childName ?? '';
+  const score = route?.params?.score ?? 0;
+  const total = route?.params?.total ?? 1;
+  const result = route?.params?.result ?? '';
+  const date = route?.params?.date ?? '';
+  const screener = route?.params?.screener ?? '';
   const domainBreakdown = route?.params?.domainBreakdown;
-  const progress = Math.min(1, Math.max(0, score / total));
+  const isRepeat = route?.params?.isRepeat ?? false;
+  const previousScore = route?.params?.previousScore ?? null;
+  const progress = Math.min(1, Math.max(0, Number(score || 0) / Number(total || 1)));
+
+  const prevScoreVal = previousScore?.totalScore != null ? Number(previousScore.totalScore) : undefined;
+  const currentScoreVal = Number(score);
+  const hasHistory = isRepeat && prevScoreVal !== undefined;
+
+  let trendStatus = 'No Change';
+  let trendStatusColor = '#6B7180';
+  let trendStatusBg = '#F4F5F5';
+  let isImproved = false;
+  let percentChange = 0;
+
+  if (hasHistory) {
+    const diff = currentScoreVal - prevScoreVal;
+    percentChange = Math.round((Math.abs(diff) / prevScoreVal) * 100);
+    if (diff < 0) {
+      trendStatus = 'Improved';
+      trendStatusColor = '#1A7340';
+      trendStatusBg = '#E8F7F0';
+      isImproved = true;
+    } else if (diff > 0) {
+      trendStatus = 'Needs Attention';
+      trendStatusColor = '#E25648';
+      trendStatusBg = '#FDF0EB';
+      isImproved = false;
+    }
+  }
+
+  const prevDateStr = previousScore?.date ?? '';
+
+  const resultLower = result.toLowerCase();
+  const resultLabelKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'resultNormal'
+    : resultLower.includes('mild')
+    ? 'resultMildAutism'
+    : resultLower.includes('moderate')
+    ? 'resultModerateAutism'
+    : resultLower.includes('severe')
+    ? 'resultSevereAutism'
+    : 'resultNormal';
+  const resultDescKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'noSignsResultDescription'
+    : resultLower.includes('mild')
+    ? 'mildResultDescription'
+    : resultLower.includes('moderate')
+    ? 'moderateResultDescription'
+    : resultLower.includes('severe')
+    ? 'severeResultDescription'
+    : 'mildResultDescription';
+
+  const getStatusKey = (status: string) => {
+    const lower = (status ?? '').toLowerCase();
+    if (lower.includes('great')) return 'doingGreat';
+    if (lower.includes('well')) return 'doingWell';
+    if (lower.includes('more support')) return 'needsMoreSupport';
+    if (lower.includes('extra support')) return 'needsExtraSupport';
+    if (lower.includes('progress')) return 'makingProgress';
+    if (lower.includes('support')) return 'needsSupport';
+    return lower.replace(/\s+/g, '');
+  };
 
   // Answers source: route params or context
   const contextAnswers = screening?.domainAnswers || {};
@@ -262,7 +327,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === key);
       if (bd) {
-        const statusLower = bd.status.toLowerCase();
+        const statusLower = (bd.status ?? '').toLowerCase();
         return statusLower.includes('great') || statusLower.includes('well');
       }
     }
@@ -307,10 +372,10 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === d.key);
       if (bd) {
-        scoreStr = `${bd.score}/${bd.maxScore}`;
-        statusStr = bd.status;
-        statusColorStr = bd.statusColor;
-        statusBgStr = bd.statusBg;
+        scoreStr = `${bd.score ?? 0}/${bd.maxScore ?? 45}`;
+        statusStr = bd.status ?? d.status;
+        statusColorStr = bd.statusColor ?? d.statusColor;
+        statusBgStr = bd.statusBg ?? d.statusBg;
       }
     }
 
@@ -352,7 +417,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
   const handleShare = async () => {
     try {
       const shareResult = await Share.share({
-        message: `Saarathi Care Screening Report\nChild: ${childName}\nResult: ${result}\nScore: ${score}/${total}\nDate: ${date}\n\nThis screening result is indicative. Consult a specialist for a detailed evaluation.`,
+        message: t('shareReportMessage', { name: childName, result: t(resultLabelKey), score: String(score), total: String(total), date }),
       });
       if (shareResult.action === Share.sharedAction) {
         if (shareResult.activityType) {
@@ -386,7 +451,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
         <Pressable onPress={() => navigation.goBack()} hitSlop={scaleSize(10)}>
           <BackArrow width={scaleSize(12)} height={scaleSize(21)} />
         </Pressable>
-        <Text style={[styles.headerTitle, { fontSize: scaleSize(16) }]}>Screening Report</Text>
+        <Text style={[styles.headerTitle, { fontSize: scaleSize(16) }]}>{t('screeningReport')}</Text>
         <View style={{ width: scaleSize(12) }} />
       </View>
 
@@ -395,7 +460,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.overviewCard, { padding: scaleSize(12), borderRadius: scaleSize(24) }]}>
-          <Text style={[styles.overviewTitle, { fontSize: scaleSize(16) }]}>{childName}'s Screening Overview</Text>
+          <Text style={[styles.overviewTitle, { fontSize: scaleSize(16) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
           <View style={styles.overviewMetaRow}>
             <View style={styles.metaItem}>
               <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
@@ -410,13 +475,13 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
           <View style={styles.scoreRow}>
             <View>
               <View style={styles.scoreLabelRow}>
-                <Text style={[styles.scoreLabel, { fontSize: scaleSize(12) }]}>Score : </Text>
+                <Text style={[styles.scoreLabel, { fontSize: scaleSize(12) }]}>{t('score')} : </Text>
                 <Text style={[styles.scoreValue, { fontSize: scaleSize(20) }]}>{score} / {total}</Text>
                 <Text style={[styles.scoreAsterisk, { fontSize: scaleSize(14) }]}> *</Text>
               </View>
               <View style={[styles.resultBadge, { backgroundColor: '#E8F7F0', borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), marginTop: scaleSize(6) }]}>
                 <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#1A7340" color="#1A7340" />
-                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#1A7340', marginLeft: scaleSize(4) }]}>{result}</Text>
+                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#1A7340', marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
               </View>
             </View>
           </View>
@@ -473,7 +538,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
           </View>
 
           <Text style={[styles.disclaimer, { fontSize: scaleSize(11), marginTop: scaleSize(10) }]}>
-            * The score is indicative, not diagnostic. Consult a specialist for confirmation.
+            {t('scoreDisclaimer')}
           </Text>
         </View>
 
@@ -483,31 +548,88 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
               <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} fill="#FFF" color="#FFF" />
             </View>
             <View style={{ marginLeft: scaleSize(12), flex: 1 }}>
-              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: '#1A7340' }]}>SCREENING RESULT</Text>
-              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: '#1A7340' }]}>No Signs of Autism</Text>
+              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: '#1A7340' }]}>{t('screeningResult')}</Text>
+              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: '#1A7340' }]}>{t(resultLabelKey)}</Text>
               <Text style={[styles.summaryScore, { fontSize: scaleSize(12), marginTop: scaleSize(2) }]}>{score} / {total}</Text>
             </View>
           </View>
           <View style={[styles.summaryDivider, { marginVertical: scaleSize(10) }]} />
           <Text style={[styles.summaryBody, { fontSize: scaleSize(12) }]}>
-            {childName} shows no signs of autism right now and everything seems to work well for all the domains. Still concerned?{'\n'}A developmental pediatrician can help.
+            {t(resultDescKey, { name: childName })}
           </Text>
         </View>
+
+        {hasHistory && (
+          <View style={{ padding: scaleSize(16), borderRadius: scaleSize(16), backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E4E8' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scaleSize(16) }}>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(14), color: '#2D2A3A' }}>{t('scoreTrend')}</Text>
+              <View style={{ backgroundColor: trendStatusBg, borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3) }}>
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(10), color: trendStatusColor }}>
+                  {isImproved ? '↓ ' + t('improved') : '↑ ' + t('needsAttention')}
+                </Text>
+              </View>
+            </View>
+
+            <Svg width={width - scaleSize(64)} height={scaleSize(160)}>
+              {(() => {
+                const chartW = width - scaleSize(64);
+                const x0 = scaleSize(40);
+                const x1 = chartW - scaleSize(40);
+                const minScore = Math.max(0, Math.min(prevScoreVal ?? 0, currentScoreVal) - 20);
+                const maxScore = Math.max(prevScoreVal ?? currentScoreVal, currentScoreVal) + 20;
+                const yFor = (val: number) => scaleSize(120) - ((val - minScore) / (maxScore - minScore)) * scaleSize(90);
+                const y0 = yFor(prevScoreVal ?? 0);
+                const y1 = yFor(currentScoreVal);
+                return (
+                  <G>
+                    {[0.25, 0.5, 0.75].map((ratio) => (
+                      <Line
+                        key={ratio}
+                        x1={scaleSize(35)}
+                        y1={scaleSize(30) + ratio * scaleSize(90)}
+                        x2={chartW - scaleSize(35)}
+                        y2={scaleSize(30) + ratio * scaleSize(90)}
+                        stroke="#E2E4E8"
+                        strokeWidth={1}
+                        strokeDasharray="4 4"
+                      />
+                    ))}
+                    <Line x1={x0} y1={y0} x2={x1} y2={y1} stroke={isImproved ? '#1A7340' : '#E25648'} strokeWidth={3} />
+                    <Circle cx={x0} cy={y0} r={4} fill="#535BD8" />
+                    <Circle cx={x1} cy={y1} r={4} fill={isImproved ? '#1A7340' : '#E25648'} />
+                    <SvgText x={x0} y={scaleSize(140)} fill="#9E9EA0" fontSize={scaleSize(10)} textAnchor="middle">{prevDateStr.split(' ').slice(0, 2).join(' ')}</SvgText>
+                    <SvgText x={x1} y={scaleSize(140)} fill={isImproved ? '#1A7340' : '#E25648'} fontSize={scaleSize(10)} fontWeight="bold" textAnchor="middle">{date.split(' ').slice(0, 2).join(' ')}</SvgText>
+                  </G>
+                );
+              })()}
+            </Svg>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: trendStatusBg, borderRadius: scaleSize(12), padding: scaleSize(12), marginTop: scaleSize(8), gap: scaleSize(8) }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isImproved ? '#1A7340' : '#E25648', borderRadius: scaleSize(8), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(4), gap: scaleSize(2) }}>
+                <Svg width={scaleSize(10)} height={scaleSize(10)} viewBox="0 0 10 10">
+                  <Path d={isImproved ? "M2 8L5 2L8 8" : "M2 2L5 8L8 2"} stroke="#FFFFFF" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+                <Text style={{ color: '#FFFFFF', fontSize: scaleSize(11), fontFamily: 'Inter_700Bold' }}>{isImproved ? `-${percentChange}%` : `+${percentChange}%`}</Text>
+              </View>
+              <Text style={{ fontSize: scaleSize(12), color: '#18182D', fontFamily: 'Inter_600SemiBold', flex: 1 }}>{isImproved ? t('improvement') : t('needsAttentionLowercase')} {t('since')} {prevDateStr}</Text>
+            </View>
+          </View>
+        )}
 
         <View style={[styles.infoCard, { padding: scaleSize(11), borderRadius: scaleSize(14) }]}>
           <View style={[styles.infoIconCircle, { width: scaleSize(44), height: scaleSize(44), borderRadius: scaleSize(22) }]}>
             <WarningIcon width={scaleSize(24)} height={scaleSize(24)} color="#18182D" />
           </View>
           <View style={{ marginLeft: scaleSize(12), flex: 1 }}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(13), color: '#18182D' }]}>A screening is not a diagnosis</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(13), color: '#18182D' }]}>{t('screeningNotDiagnosis')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>
-              Screening results are not a diagnosis. They help identify developmental signals and guide your next steps.
+              {t('screeningNotDiagnosisBody')}
             </Text>
           </View>
         </View>
 
         <View style={{ position: 'relative' }}>
-          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>Top Insights</Text>
+          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('topInsights')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: scaleSize(12) }}>
           {INSIGHTS.map((insight, index) => {
             const { Icon } = insight;
@@ -525,7 +647,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
                   <View style={{ marginLeft: scaleSize(10), flex: 1 }}>
                     <Text style={[styles.insightTitle, { fontSize: scaleSize(11) }]}>{insight.title}</Text>
                     <View style={[styles.statusBadgeInline, { backgroundColor: insight.statusBg, borderRadius: scaleSize(12), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3), alignSelf: 'flex-start', marginTop: scaleSize(4) }]}>
-                      <Text style={[styles.statusBadgeText, { fontSize: scaleSize(9), color: insight.statusColor }]}>{insight.status}</Text>
+                      <Text style={[styles.statusBadgeText, { fontSize: scaleSize(9), color: insight.statusColor }]}>{t(getStatusKey(insight.status))}</Text>
                     </View>
                   </View>
                 </View>
@@ -542,15 +664,15 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
         </View>
 
         <View>
-          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>Development by Domain</Text>
-          <Text style={[styles.sectionSubtitle, { fontSize: scaleSize(12) }]}>Tap any domain to see attention areas and areas working well</Text>
+          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>{t('developmentByDomain')}</Text>
+          <Text style={[styles.sectionSubtitle, { fontSize: scaleSize(12) }]}>{t('tapAnyDomain')}</Text>
         </View>
 
         {domainsDetailWithScore.map((domain) => {
           const { Icon } = domain;
           const expanded = expandedDomain === domain.key;
           return (
-            <Pressable key={domain.key} onPress={() => toggleDomain(domain.key)} style={[styles.domainCard, { paddingVertical: scaleSize(14), paddingHorizontal: scaleSize(16), borderRadius: scaleSize(16) }]}>
+            <Pressable key={domain.key} onPress={() => toggleDomain(domain.key)} style={[styles.domainCard, { paddingVertical: scaleSize(14), paddingHorizontal: scaleSize(16), borderRadius: scaleSize(16), borderColor: expanded ? domain.color : '#E2E4E8' }]}>
               <View style={styles.domainCardHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={[styles.domainCardIconBox, { width: scaleSize(32), height: scaleSize(32), borderRadius: scaleSize(9), backgroundColor: domain.color }]}>
@@ -560,52 +682,53 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }}>
                   <View style={[styles.statusBadge, { backgroundColor: domain.statusBg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-                    <Text style={[styles.statusBadgeText, { fontSize: scaleSize(11), color: domain.statusColor }]}>{domain.status}</Text>
+                    <Text style={[styles.statusBadgeText, { fontSize: scaleSize(11), color: domain.statusColor }]}>{t(getStatusKey(domain.status))}</Text>
                   </View>
+                  <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(13), color: '#2D2A3A' }}>{domain.score}</Text>
                   <ChevronDown width={scaleSize(16)} height={scaleSize(16)} style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }} />
                 </View>
               </View>
               {expanded && (
                 <View style={{ marginTop: scaleSize(12), gap: scaleSize(10) }}>
-                  {domain.attention.length > 0 && (
-                    <View>
-                      <View style={[styles.subTab, { backgroundColor: '#FEF3F2', borderRadius: scaleSize(12), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: scaleSize(4) }]}>
-                        <WarningIcon width={scaleSize(12)} height={scaleSize(12)} />
-                        <Text style={[styles.subTabText, { fontSize: scaleSize(11), color: '#E25648' }]}>Attention areas ({domain.attention.length})</Text>
-                      </View>
-                      {domain.attention.map((a, i) => (
-                        <View key={i} style={[styles.numberedItem, { marginTop: scaleSize(8) }]}>
-                          <View style={[styles.numberCircle, { width: scaleSize(24), height: scaleSize(24), borderRadius: scaleSize(12), backgroundColor: '#F3F2FF' }]}>
-                            <Text style={[styles.numberText, { fontSize: scaleSize(11), color: '#535BD8' }]}>{i + 1}</Text>
-                          </View>
-                          <Text style={[styles.bulletText, { fontSize: scaleSize(12), flex: 1 }]}>{a}</Text>
-                        </View>
-                      ))}
+                  <View style={{ flexDirection: 'row', gap: scaleSize(8), marginBottom: scaleSize(4) }}>
+                    <Pressable
+                      onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'attention' }))}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6), paddingHorizontal: scaleSize(12), paddingVertical: scaleSize(8), borderRadius: scaleSize(24), backgroundColor: domainTab[domain.key] === 'attention' ? '#535BD8' : '#F3F2FF' }}
+                    >
+                      <WarningIcon width={scaleSize(14)} height={scaleSize(14)} />
+                      <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(12), color: domainTab[domain.key] === 'attention' ? '#FFFFFF' : '#2D2A3A' }}>{t('attentionAreas')} ({domain.attention.length})</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'strengths' }))}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6), paddingHorizontal: scaleSize(12), paddingVertical: scaleSize(8), borderRadius: scaleSize(24), backgroundColor: domainTab[domain.key] === 'strengths' ? '#1A7340' : '#F3F2FF' }}
+                    >
+                      <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
+                      <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(12), color: domainTab[domain.key] === 'strengths' ? '#FFFFFF' : '#2D2A3A' }}>{t('areasWorkingWell')} ({domain.strengths.length})</Text>
+                    </Pressable>
+                  </View>
+
+                  {domainTab[domain.key] === 'strengths' && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6) }}>
+                      <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
+                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(12), color: '#1A7340' }}>{t('heresWhatWorkingWell')}</Text>
                     </View>
                   )}
-                  {domain.strengths.length > 0 && (
-                    <View>
-                      <View style={[styles.subTab, { backgroundColor: '#E8F7F0', borderRadius: scaleSize(12), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: scaleSize(4) }]}>
-                        <StarIcon width={scaleSize(12)} height={scaleSize(12)} />
-                        <Text style={[styles.subTabText, { fontSize: scaleSize(11), color: '#1A7340' }]}>Areas working well ({domain.strengths.length})</Text>
+
+                  {(domainTab[domain.key] === 'attention' ? domain.attention : domain.strengths).map((item: string, idx: number) => (
+                    <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(10), padding: scaleSize(12), borderRadius: scaleSize(12), backgroundColor: domainTab[domain.key] === 'attention' ? '#F6F6F8' : '#E8F7F0' }}>
+                      <View style={[styles.numberCircle, { width: scaleSize(24), height: scaleSize(24), borderRadius: scaleSize(12), backgroundColor: domainTab[domain.key] === 'attention' ? domain.statusBg : '#FFFFFF' }]}>
+                        <Text style={[styles.numberText, { fontSize: scaleSize(11), color: domainTab[domain.key] === 'attention' ? domain.statusColor : '#1A7340' }]}>{idx + 1}</Text>
                       </View>
-                      {domain.strengths.map((s, i) => (
-                        <View key={i} style={[styles.numberedItem, { marginTop: scaleSize(8) }]}>
-                          <View style={[styles.numberCircle, { width: scaleSize(24), height: scaleSize(24), borderRadius: scaleSize(12), backgroundColor: '#E8F7F0' }]}>
-                            <Text style={[styles.numberText, { fontSize: scaleSize(11), color: '#1A7340' }]}>{i + 1}</Text>
-                          </View>
-                          <Text style={[styles.bulletText, { fontSize: scaleSize(12), flex: 1 }]}>{s}</Text>
-                        </View>
-                      ))}
+                      <Text style={[styles.bulletText, { fontSize: scaleSize(12), flex: 1, lineHeight: scaleSize(18) }]}>{item}</Text>
                     </View>
-                  )}
+                  ))}
                 </View>
               )}
             </Pressable>
           );
         })}
 
-        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>Learn More About Child</Text>
+        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>{t('learnMoreAboutChild')}</Text>
         {LEARN_MORE.map((item, index) => {
           const isExpanded = expandedLearnMore === index;
           return (
@@ -625,7 +748,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
               )}
               {isExpanded && !item.body && (
                 <View style={[styles.askButton, { marginTop: scaleSize(10), flexDirection: 'row', alignItems: 'center', gap: scaleSize(6) }]}>
-                  <Text style={[styles.askButtonText, { fontSize: scaleSize(12) }]}>Ask Saarathi Care →</Text>
+                  <Text style={[styles.askButtonText, { fontSize: scaleSize(12) }]}>{t('askSaarathiCare')} →</Text>
                 </View>
               )}
             </Pressable>
@@ -639,14 +762,14 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
             onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers })}
             style={({ pressed }) => [styles.downloadBtn, { height: scaleSize(52), borderRadius: scaleSize(26), flex: 1, opacity: pressed ? 0.9 : 1 }]}
           >
-            <Text style={[styles.downloadBtnText, { fontSize: scaleSize(16) }]}>Download Report</Text>
+            <Text style={[styles.downloadBtnText, { fontSize: scaleSize(16) }]}>{t('downloadReport')}</Text>
           </Pressable>
           <Pressable
             onPress={handleShare}
             style={({ pressed }) => [styles.shareBtn, { height: scaleSize(52), borderRadius: scaleSize(26), width: scaleSize(122), opacity: pressed ? 0.9 : 1 }]}
           >
             <ShareIcon width={scaleSize(20)} height={scaleSize(20)} />
-            <Text style={[styles.shareBtnText, { fontSize: scaleSize(14), color: '#2D2A3A', marginLeft: scaleSize(6) }]}>Share</Text>
+            <Text style={[styles.shareBtnText, { fontSize: scaleSize(14), color: '#2D2A3A', marginLeft: scaleSize(6) }]}>{t('share')}</Text>
           </Pressable>
         </View>
       </View>

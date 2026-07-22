@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import AvatarIcon from '../assets/figma/screen16/image 9 [Vectorized].svg';
 import CloseIcon from '../assets/figma/screen26/Frame-32.svg';
 import LanguageIcon from '../assets/figma/home/Frame 455.svg';
@@ -25,6 +26,7 @@ export default function SideMenu({ visible, onClose, onLanguage }: SideMenuProps
   const { width } = useWindowDimensions();
   const navigation = useNavigation<any>();
   const { user, signOut } = useAuth();
+  const { language, t } = useLanguage();
   const caregiver = user?.caregiverProfile;
 
   return (
@@ -34,7 +36,7 @@ export default function SideMenu({ visible, onClose, onLanguage }: SideMenuProps
         <SafeAreaView style={styles.safe}>
           <View style={[styles.drawer, { width: Math.min(330, width * 0.82), height: '100%' }]}>
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>Profile & Settings</Text>
+              <Text style={styles.headerTitle}>{t('profileSettings')}</Text>
               <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={10}>
                 <CloseIcon width={18} height={18} />
               </Pressable>
@@ -56,13 +58,13 @@ export default function SideMenu({ visible, onClose, onLanguage }: SideMenuProps
                 navigation.reset({ index: 0, routes: [{ name: 'Splash' }] });
               }}
             >
-              <Text style={styles.logoutText}>Log out</Text>
+              <Text style={styles.logoutText}>{t('logout')}</Text>
             </Pressable>
 
             <Pressable style={styles.languageRow} onPress={onLanguage}>
               <LanguageIcon width={24} height={24} />
-              <Text style={styles.languageLabel}>Language</Text>
-              <Text style={styles.languageValue}>English</Text>
+              <Text style={styles.languageLabel}>{t('language')}</Text>
+              <Text style={styles.languageValue}>{language}</Text>
               <Text style={styles.chevron}>›</Text>
             </Pressable>
 

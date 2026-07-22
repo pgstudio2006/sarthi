@@ -18,11 +18,13 @@ export default function ChoiceGrid({
   selected,
   onSelect,
   columns = 2,
+  getLabel,
 }: {
   options: string[];
   selected: string | null;
   onSelect: (value: string) => void;
   columns?: number;
+  getLabel?: (value: string) => string;
 }) {
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
@@ -36,7 +38,7 @@ export default function ChoiceGrid({
           {row.map((option) => (
             <SelectionChip
               key={option}
-              label={option}
+              label={getLabel ? getLabel(option) : option}
               selected={selected === option}
               onPress={() => onSelect(option)}
             />

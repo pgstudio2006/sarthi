@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import { useLanguage } from '../context/LanguageContext';
 import { useScreening } from '../context/ScreeningContext';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
@@ -85,6 +86,7 @@ export default function BehaviorScreeningScreen({ navigation }: { navigation: an
   const { scaleSize, padding, scaleFont } = useResponsive();
   const { top, bottom } = useSafeAreaInsets();
   const { language } = useLanguage();
+  const { t } = useTranslation();
   const screening = useScreening();
   const [answers, setAnswers] = useState<(number | null)[]>(
     screening.getDomainAnswers('Behavior').length === QUESTIONS.length
@@ -136,7 +138,7 @@ export default function BehaviorScreeningScreen({ navigation }: { navigation: an
           <Text style={[styles.sectionLabel, { fontSize: scaleFont(12), color: '#D66A8E' }]}>SECTION 04 OF 06</Text>
           <Pressable onPress={() => navigation.navigate('SaveExit', { sectionNumber: 4, answeredCount: answers.filter((a) => a !== null).length, totalQuestions: QUESTIONS.length })} style={styles.saveExit} hitSlop={scaleSize(10)}>
             <PauseIcon width={scaleSize(16)} height={scaleSize(16)} />
-            <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>Save & Exit</Text>
+            <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>{t('saveExit')}</Text>
           </Pressable>
         </View>
 

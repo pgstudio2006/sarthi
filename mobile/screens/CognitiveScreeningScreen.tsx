@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import { useLanguage } from '../context/LanguageContext';
 import { useScreening } from '../context/ScreeningContext';
 import { useAuth } from '../context/AuthContext';
@@ -69,6 +70,7 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
   const { scaleSize, padding, scaleFont } = useResponsive();
   const { top, bottom } = useSafeAreaInsets();
   const { language } = useLanguage();
+  const { t } = useTranslation();
   const screening = useScreening();
   const { user } = useAuth();
   const [answers, setAnswers] = useState<(number | null)[]>(
@@ -124,7 +126,7 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
           <Text style={[styles.sectionLabel, { fontSize: scaleFont(12), color: '#7D6CB7' }]}>SECTION 06 OF 06</Text>
           <Pressable onPress={() => navigation.navigate('SaveExit', { sectionNumber: 6, answeredCount: answers.filter((a) => a !== null).length, totalQuestions: QUESTIONS.length })} style={styles.saveExit} hitSlop={scaleSize(10)}>
             <PauseIcon width={scaleSize(16)} height={scaleSize(16)} />
-            <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>Save & Exit</Text>
+            <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>{t('saveExit')}</Text>
           </Pressable>
         </View>
 

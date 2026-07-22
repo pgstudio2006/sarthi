@@ -58,38 +58,6 @@ router.post('/child', async (req, res) => {
   res.json({ success: true, child });
 });
 
-const updateChildSchema = z.object({
-  name: z.string().min(1).optional(),
-  dateOfBirth: z.string().min(1).optional(),
-  gender: z.string().min(1).optional(),
-  birthContext: z.string().min(1).optional(),
-  ageInMonths: z.number().int().optional(),
-});
-
-router.patch('/child/:id', async (req, res) => {
-  const parse = updateChildSchema.safeParse(req.body);
-  if (!parse.success) {
-    res.status(400).json({ error: 'Invalid child profile data' });
-    return;
-  }
-
-  const userId = req.user!.userId;
-  const child = await prisma.childProfile.findFirst({
-    where: { id: req.params.id, userId },
-  });
-  if (!child) {
-    res.status(404).json({ error: 'Child not found' });
-    return;
-  }
-
-  const updated = await prisma.childProfile.update({
-    where: { id: req.params.id },
-    data: parse.data,
-  });
-
-  res.json({ success: true, child: updated });
-});
-
 router.get('/children', async (_req, res) => {
   const userId = _req.user!.userId;
   const children = await prisma.childProfile.findMany({

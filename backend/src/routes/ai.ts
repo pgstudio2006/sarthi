@@ -162,7 +162,7 @@ router.post('/faqs', requireAuth, async (req, res) => {
     return result;
   }, {}) || {};
   const priorityDomains = Object.entries(domainContext)
-    .map(([domain, score]) => ({ domain, status: getDomainStatus(domain, score), score }))
+    .map(([domain, score]) => ({ domain, status: getDomainStatus(domain, score).label, score }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
     .map((item) => `${item.domain}: ${item.status}`);

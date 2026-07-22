@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
+import { useTranslation } from '../i18n';
 import TopHeader from '../components/TopHeader';
 import HeroIllustration from '../components/HeroIllustration';
 import PaginationIndicator from '../components/PaginationIndicator';
@@ -19,6 +20,7 @@ import LockIcon from '../assets/screen5/lock.svg';
 const FIGMA_WIDTH = 390;
 
 export default function NextStepsScreen({ navigation }: { navigation: any }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
 
@@ -54,17 +56,17 @@ export default function NextStepsScreen({ navigation }: { navigation: any }) {
         ]}
       >
         <Text style={[styles.heading, { fontSize: 26 * scale, lineHeight: 34 * scale }]}>
-          Know the Next Steps
+          {t('knowNextSteps')}
         </Text>
 
         <Text style={[styles.body, { fontSize: 14 * scale, lineHeight: 20 * scale, marginTop: 12 * scale }]}>
-          If the screening identifies signs that need further attention, Saarathi guides you on what to do next and helps you prepare before consulting a qualified specialist.
+          {t('knowNextStepsBody')}
         </Text>
 
         <View style={[styles.privacyWrapper, { marginTop: 12 * scale }]}>
           <PrivacyInfoCard
             icon={<LockIcon width={16 * scale} height={16 * scale} />}
-            message="We never share your child's information without your permission."
+            message={t('neverShareInfo')}
             backgroundColor={colors.privacyGreenLight}
           />
         </View>
@@ -75,7 +77,7 @@ export default function NextStepsScreen({ navigation }: { navigation: any }) {
       </ScrollView>
 
       <View style={[styles.buttonWrapper, { paddingHorizontal: 20 * scale, paddingBottom: 24 * scale }]}>
-        <PrimaryButton label="Let's Begin" onPress={handleBegin} />
+        <PrimaryButton label={t('letsBegin')} onPress={handleBegin} />
       </View>
     </SafeAreaView>
   );

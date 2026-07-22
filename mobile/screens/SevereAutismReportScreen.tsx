@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScreening } from '../context/ScreeningContext';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import { generateScreeningReportPDF } from '../utils/reportPdf';
 import ProgressRing from '../components/ProgressRing';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
@@ -26,6 +27,7 @@ import ChevronUp from '../assets/figma/screen28/Frame-6.svg';
 import CheckmarkIcon from '../assets/figma/screen28/Checkmark1.png';
 import ResultFlagIcon from '../assets/figma/screen28/Frame-10.svg';
 import { getDynamicFAQs } from '../utils/qaLogic';
+import { getAiFaqs, AiFaq } from '../api/client';
 
 import SocialIcon from '../assets/figma/screen28/Frame-7.svg';
 import EmotionIcon from '../assets/figma/screen28/Frame-5.svg';
@@ -240,16 +242,50 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
 
 export default function SevereAutismReportScreen({ navigation, route }: any) {
   const { scaleSize, padding } = useResponsive();
+  const { t } = useTranslation();
   const screening = useScreening();
 
-  const childName = route?.params?.childName ?? 'Nitya';
-  const score = route?.params?.score ?? 164;
-  const total = route?.params?.total ?? 200;
-  const result = route?.params?.result ?? 'Severe Autism';
-  const date = route?.params?.date ?? '8 June 2026';
-  const screener = route?.params?.screener ?? 'Dhaval (Father)';
+  const childName = route?.params?.childName ?? '';
+  const score = route?.params?.score ?? 0;
+  const total = route?.params?.total ?? 1;
+  const result = route?.params?.result ?? '';
+  const date = route?.params?.date ?? '';
+  const screener = route?.params?.screener ?? '';
   const domainBreakdown = route?.params?.domainBreakdown;
-  const progress = Math.min(1, Math.max(0, score / total));
+  const completedCount = route?.params?.completedCount ?? (route?.params?.isRepeat ? 2 : 1);
+  const childId = route?.params?.childId ?? '';
+  const progress = Math.min(1, Math.max(0, Number(score || 0) / Number(total || 1)));
+
+  const resultLower = result.toLowerCase();
+  const resultLabelKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'resultNormal'
+    : resultLower.includes('mild')
+    ? 'resultMildAutism'
+    : resultLower.includes('moderate')
+    ? 'resultModerateAutism'
+    : resultLower.includes('severe')
+    ? 'resultSevereAutism'
+    : 'resultNormal';
+  const resultDescKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'noSignsResultDescription'
+    : resultLower.includes('mild')
+    ? 'mildResultDescription'
+    : resultLower.includes('moderate')
+    ? 'moderateResultDescription'
+    : resultLower.includes('severe')
+    ? 'severeResultDescription'
+    : 'mildResultDescription';
+
+  const getStatusKey = (status: string) => {
+    const lower = (status ?? '').toLowerCase();
+    if (lower.includes('great')) return 'doingGreat';
+    if (lower.includes('well')) return 'doingWell';
+    if (lower.includes('more support')) return 'needsMoreSupport';
+    if (lower.includes('extra support')) return 'needsExtraSupport';
+    if (lower.includes('progress')) return 'makingProgress';
+    if (lower.includes('support')) return 'needsSupport';
+    return lower.replace(/\s+/g, '');
+  };
 
   const severityColor = '#A83B3B';
   const severityBg = '#FDF0F0';
@@ -263,7 +299,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === key);
       if (bd) {
-        const statusLower = bd.status.toLowerCase();
+        const statusLower = (bd.status ?? '').toLowerCase();
         return statusLower.includes('great') || statusLower.includes('well');
       }
     }
@@ -308,10 +344,10 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === d.key);
       if (bd) {
-        scoreStr = `${bd.score}/${bd.maxScore}`;
-        statusStr = bd.status;
-        statusColorStr = bd.statusColor;
-        statusBgStr = bd.statusBg;
+        scoreStr = `${bd.score ?? 0}/${bd.maxScore ?? 45}`;
+        statusStr = bd.status ?? d.status;
+        statusColorStr = bd.statusColor ?? d.statusColor;
+        statusBgStr = bd.statusBg ?? d.statusBg;
       }
     }
 
@@ -363,7 +399,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
   const handleShare = async () => {
     try {
       const shareResult = await Share.share({
-        message: `Saarathi Care Screening Report\nChild: ${childName}\nResult: ${result}\nScore: ${score}/${total}\nDate: ${date}\n\nThis screening result is indicative. Consult a specialist for a detailed evaluation.`,
+        message: t('shareReportMessage', { name: childName, result: t(resultLabelKey), score: String(score), total: String(total), date }),
       });
       if (shareResult.action === Share.sharedAction) {
         if (shareResult.activityType) {
@@ -379,7 +415,24 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
     }
   };
 
-  const reportFAQs = getDynamicFAQs(3, false, domainsDetailWithScore.map(d => d.key));
+  const reportPriorityDomains = useMemo(
+    () => domainsDetailWithScore.map(d => d.key),
+    [domainsDetailWithScore]
+  );
+  const [reportFAQs, setReportFAQs] = useState<AiFaq[]>(() =>
+    getDynamicFAQs(completedCount, false, reportPriorityDomains)
+  );
+  useEffect(() => {
+    let mounted = true;
+    if (!childId) return;
+    getAiFaqs(childId).then((res) => {
+      if (!mounted) return;
+      if (res.success && res.data.faqs.length === 10) {
+        setReportFAQs(res.data.faqs);
+      }
+    });
+    return () => { mounted = false; };
+  }, [childId, completedCount, reportPriorityDomains]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -387,7 +440,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
         <Pressable onPress={() => navigation.goBack()} hitSlop={scaleSize(10)}>
           <BackArrow width={scaleSize(12)} height={scaleSize(21)} />
         </Pressable>
-        <Text style={[styles.headerTitle, { fontSize: scaleSize(16) }]}>Screening Report</Text>
+        <Text style={[styles.headerTitle, { fontSize: scaleSize(16) }]}>{t('screeningReport')}</Text>
         <View style={{ width: scaleSize(12) }} />
       </View>
 
@@ -396,7 +449,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.overviewCard, { padding: scaleSize(16), borderRadius: scaleSize(24), borderWidth: 1, borderColor: 'rgba(83, 91, 216, 0.21)' }]}>
-          <Text style={[styles.overviewTitle, { fontSize: scaleSize(16) }]}>{childName}'s Screening Overview</Text>
+          <Text style={[styles.overviewTitle, { fontSize: scaleSize(16) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
           <View style={styles.overviewMetaRow}>
             <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
             <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(6) }]}>{date}</Text>
@@ -406,13 +459,13 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           <View style={styles.scoreRow}>
             <View>
               <View style={styles.scoreLabelRow}>
-                <Text style={[styles.scoreLabel, { fontSize: scaleSize(12) }]}>Score : </Text>
+                <Text style={[styles.scoreLabel, { fontSize: scaleSize(12) }]}>{t('score')} : </Text>
                 <Text style={[styles.scoreValue, { fontSize: scaleSize(20) }]}>{score} / {total}</Text>
                 <Text style={[styles.scoreAsterisk, { fontSize: scaleSize(14) }]}> *</Text>
               </View>
               <View style={[styles.resultBadge, { backgroundColor: severityColor, borderColor: severityColor, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
                 <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#FFF" color="#FFF" />
-                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#FFF', marginLeft: scaleSize(4) }]}>{result}</Text>
+                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#FFF', marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
               </View>
             </View>
           </View>
@@ -511,7 +564,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           </View>
 
           <Text style={[styles.disclaimer, { fontSize: scaleSize(11), marginTop: scaleSize(12) }]}>
-            * The score is indicative, not diagnostic. Consult a specialist for confirmation.
+            {t('scoreDisclaimer')}
           </Text>
         </View>
 
@@ -519,28 +572,28 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           <View style={styles.summaryHeader}>
             <StarIcon width={scaleSize(24)} height={scaleSize(24)} />
             <View style={{ marginLeft: scaleSize(12) }}>
-              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: severityColor }]}>SCREENING RESULT</Text>
-              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: severityColor }]}>{result}</Text>
+              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: severityColor }]}>{t('screeningResult')}</Text>
+              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: severityColor }]}>{t(resultLabelKey)}</Text>
               <Text style={[styles.summaryScore, { fontSize: scaleSize(12), marginTop: scaleSize(2) }]}>{score} / {total}</Text>
             </View>
           </View>
           <View style={[styles.summaryDivider, { marginVertical: scaleSize(12), backgroundColor: `${severityColor}20` }]} />
           <Text style={[styles.summaryBody, { fontSize: scaleSize(12) }]}>
-            {childName} shows heavy signs of severe autism across all clinical domains. We strongly recommend consulting a developmental pediatrician, child psychologist, and starting early intervention therapies (like ABA, occupational therapy, or speech therapy) as soon as possible.
+            {t(resultDescKey, { name: childName })}
           </Text>
         </View>
 
         <View style={[styles.infoCard, { padding: scaleSize(14), borderRadius: scaleSize(14), borderWidth: 1, borderColor: 'rgba(0, 0, 0, 0.1)' }]}>
           <WarningIcon width={scaleSize(24)} height={scaleSize(24)} />
           <View style={{ marginLeft: scaleSize(12), flex: 1 }}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(13) }]}>A screening is not a diagnosis</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(13) }]}>{t('screeningNotDiagnosis')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>
-              Screening results are not a diagnosis. They help identify developmental signals and guide your next steps.
+              {t('screeningNotDiagnosisBody')}
             </Text>
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>Top Insights</Text>
+        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('topInsights')}</Text>
         {INSIGHTS.map((insight) => {
           const { Icon } = insight;
           return (
@@ -554,7 +607,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                   <Text style={[styles.insightHeading, { fontSize: scaleSize(16), color: '#18182D', marginTop: scaleSize(2) }]}>{insight.heading}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: insight.statusBg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-                  <Text style={[styles.statusBadgeText, { fontSize: scaleSize(11), color: insight.statusColor }]}>{insight.status}</Text>
+                  <Text style={[styles.statusBadgeText, { fontSize: scaleSize(11), color: insight.statusColor }]}>{t(getStatusKey(insight.status))}</Text>
                 </View>
               </View>
               <View style={{ marginTop: scaleSize(12), gap: scaleSize(8) }}>
@@ -566,8 +619,8 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           );
         })}
 
-        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>Development by Domain</Text>
-        <Text style={[styles.sectionSubtitle, { fontSize: scaleSize(12) }]}>Tap any domain to see attention areas and areas working well</Text>
+        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>{t('developmentByDomain')}</Text>
+        <Text style={[styles.sectionSubtitle, { fontSize: scaleSize(12) }]}>{t('tapAnyDomain')}</Text>
         {domainsDetailWithScore.map((domain) => {
           const { Icon } = domain;
           const expanded = expandedDomain === domain.key;
@@ -582,12 +635,12 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                   </View>
                   <View style={{ marginLeft: scaleSize(12), flex: 1 }}>
                     <Text style={[styles.domainCardLabel, { fontSize: scaleSize(14) }]}>{domain.label}</Text>
-                    <Text style={[styles.domainCardScore, { fontSize: scaleSize(12) }]}>Score · {domain.score}</Text>
+                    <Text style={[styles.domainCardScore, { fontSize: scaleSize(12) }]}>{t('score')} · {domain.score}</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }}>
                   <View style={[styles.statusBadge, { backgroundColor: domain.statusBg, borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3) }]}>
-                    <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: domain.statusColor }]}>{domain.status}</Text>
+                    <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: domain.statusColor }]}>{t(getStatusKey(domain.status))}</Text>
                   </View>
                   {expanded ? <ChevronUp width={scaleSize(18)} height={scaleSize(18)} /> : <ChevronDown width={scaleSize(18)} height={scaleSize(18)} />}
                 </View>
@@ -600,20 +653,20 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                       style={[styles.domainTab, tab === 'attention' && styles.domainTabActive]}
                     >
                       <WarningIcon width={scaleSize(14)} height={scaleSize(14)} />
-                      <Text style={styles.domainTabText}>Attention areas ({domain.attention.length})</Text>
+                      <Text style={styles.domainTabText}>{t('attentionAreas')} ({domain.attention.length})</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'strengths' }))}
                       style={[styles.domainTab, tab === 'strengths' && styles.domainTabActive]}
                     >
                       <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
-                      <Text style={styles.domainTabText}>Areas working well ({domain.strengths.length})</Text>
+                      <Text style={styles.domainTabText}>{t('areasWorkingWell')} ({domain.strengths.length})</Text>
                     </Pressable>
                   </View>
                   {tab === 'strengths' && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6) }}>
                       <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
-                      <Text style={[styles.strengthHeaderText, { fontSize: scaleSize(12) }]}>Here's what working well !</Text>
+                      <Text style={[styles.strengthHeaderText, { fontSize: scaleSize(12) }]}>{t('heresWhatWorkingWell')}</Text>
                     </View>
                   )}
                   <View style={{ gap: scaleSize(10) }}>
@@ -645,7 +698,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           );
         })}
 
-        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>Learn More About Child</Text>
+        <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>{t('learnMoreAboutChild')}</Text>
         <View style={{ gap: scaleSize(12) }}>
           {reportFAQs.map((faq, index) => {
             const isOpen = openFaq === index;
@@ -675,7 +728,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                       {faq.body}
                     </Text>
                     <Pressable>
-                      <Text style={[styles.faqCta, { fontSize: scaleSize(12) }]}>Ask Saarathi Care →</Text>
+                      <Text style={[styles.faqCta, { fontSize: scaleSize(12) }]}>{t('askSaarathiCare')} →</Text>
                     </Pressable>
                   </View>
                 )}
@@ -691,14 +744,14 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           style={({ pressed }) => [styles.primaryButton, { height: scaleSize(54), borderRadius: scaleSize(26), opacity: pressed ? 0.9 : 1 }]}
         >
           <DownloadIcon width={scaleSize(20)} height={scaleSize(20)} />
-          <Text style={[styles.primaryButtonText, { fontSize: scaleSize(15) }]}>Download Report</Text>
+          <Text style={[styles.primaryButtonText, { fontSize: scaleSize(15) }]}>{t('downloadReport')}</Text>
         </Pressable>
         <Pressable
           onPress={handleShare}
           style={({ pressed }) => [styles.secondaryButton, { height: scaleSize(54), borderRadius: scaleSize(26), opacity: pressed ? 0.9 : 1 }]}
         >
           <ShareIcon width={scaleSize(20)} height={scaleSize(20)} />
-          <Text style={[styles.secondaryButtonText, { fontSize: scaleSize(15) }]}>Share</Text>
+          <Text style={[styles.secondaryButtonText, { fontSize: scaleSize(15) }]}>{t('share')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

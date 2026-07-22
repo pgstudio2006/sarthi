@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { getDynamicFAQs } from '../utils/qaLogic';
+import { getAiFaqs, AiFaq } from '../api/client';
 import {
   ScrollView,
   View,
@@ -16,6 +17,7 @@ import { useScreening } from '../context/ScreeningContext';
 import Svg, { Line, Circle, Path, Rect, Text as SvgText, G } from 'react-native-svg';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import { generateScreeningReportPDF } from '../utils/reportPdf';
 import ProgressRing from '../components/ProgressRing';
 import GradientBorderCard from '../components/GradientBorderCard';
@@ -37,7 +39,6 @@ import SpeechIcon from '../assets/figma/screen28/Frame-15.svg';
 import BehaviorIcon from '../assets/figma/screen28/Frame-14.svg';
 import SensoryIcon from '../assets/figma/screen28/Frame-13.svg';
 import CognitiveIcon from '../assets/figma/screen28/Frame-11.svg';
-import AddCircleIcon from '../assets/figma/screen28/add_circle.svg';
 
 const DOMAINS_OVERVIEW = [
   { key: 'Social', label: 'Social', Icon: SocialIcon, color: '#9651C8', progress: 0.75, ringColor: '#B87FE5' },
@@ -286,18 +287,51 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
 
 export default function ScreeningReportScreen({ navigation, route }: any) {
   const { scaleSize, padding } = useResponsive();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const cardWidth = width - scaleSize(32) - scaleSize(48);
   const screening = useScreening();
 
-  const childName = route?.params?.childName ?? 'Nitya';
-  const score = route?.params?.score ?? 104;
-  const total = route?.params?.total ?? 200;
-  const result = route?.params?.result ?? 'Mild Autism';
-  const date = route?.params?.date ?? '8 June 2026';
-  const screener = route?.params?.screener ?? 'Dhaval (Father)';
+  const childName = route?.params?.childName ?? '';
+  const score = route?.params?.score ?? 0;
+  const total = route?.params?.total ?? 1;
+  const result = route?.params?.result ?? '';
+  const date = route?.params?.date ?? '';
+  const screener = route?.params?.screener ?? '';
   const domainBreakdown = route?.params?.domainBreakdown;
-  const progress = Math.min(1, Math.max(0, score / total));
+  const childId = route?.params?.childId ?? '';
+  const progress = Math.min(1, Math.max(0, Number(score || 0) / Number(total || 1)));
+
+  const resultLower = result.toLowerCase();
+  const resultLabelKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'resultNormal'
+    : resultLower.includes('mild')
+    ? 'resultMildAutism'
+    : resultLower.includes('moderate')
+    ? 'resultModerateAutism'
+    : resultLower.includes('severe')
+    ? 'resultSevereAutism'
+    : 'resultNormal';
+  const resultDescKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'noSignsResultDescription'
+    : resultLower.includes('mild')
+    ? 'mildResultDescription'
+    : resultLower.includes('moderate')
+    ? 'moderateResultDescription'
+    : resultLower.includes('severe')
+    ? 'severeResultDescription'
+    : 'mildResultDescription';
+
+  const getStatusKey = (status: string) => {
+    const lower = (status ?? '').toLowerCase();
+    if (lower.includes('great')) return 'doingGreat';
+    if (lower.includes('well')) return 'doingWell';
+    if (lower.includes('more support')) return 'needsMoreSupport';
+    if (lower.includes('extra support')) return 'needsExtraSupport';
+    if (lower.includes('progress')) return 'makingProgress';
+    if (lower.includes('support')) return 'needsSupport';
+    return lower.replace(/\s+/g, '');
+  };
 
   const isRepeat = route?.params?.isRepeat ?? false;
   const previousScore = route?.params?.previousScore ?? null;
@@ -308,8 +342,8 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
   const domainAnswers = routeAnswers || contextAnswers;
 
   // Trend logic
-  const prevScoreVal = previousScore?.totalScore;
-  const currentScoreVal = score;
+  const prevScoreVal = previousScore?.totalScore != null ? Number(previousScore.totalScore) : undefined;
+  const currentScoreVal = Number(score);
   const hasHistory = isRepeat && prevScoreVal !== undefined;
 
   let trendStatus = 'No Change';
@@ -340,7 +374,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === key);
       if (bd) {
-        const statusLower = bd.status.toLowerCase();
+        const statusLower = (bd.status ?? '').toLowerCase();
         return statusLower.includes('great') || statusLower.includes('well');
       }
     }
@@ -389,10 +423,10 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === d.key);
       if (bd) {
-        scoreStr = `${bd.score}/${bd.maxScore}`;
-        statusStr = bd.status;
-        statusColorStr = bd.statusColor;
-        statusBgStr = bd.statusBg;
+        scoreStr = `${bd.score ?? 0}/${bd.maxScore ?? 45}`;
+        statusStr = bd.status ?? d.status;
+        statusColorStr = bd.statusColor ?? d.statusColor;
+        statusBgStr = bd.statusBg ?? d.statusBg;
       }
     }
 
@@ -492,7 +526,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     // 1. Social Card
     const socialDb = domainBreakdown.find((b: any) => b.key === 'Social');
     if (socialDb) {
-      const needsSupport = socialDb.status.toLowerCase().includes('need') || socialDb.score > (socialDb.maxScore * 0.4);
+      const needsSupport = (socialDb.status ?? '').toLowerCase().includes('need') || Number(socialDb.score || 0) > (Number(socialDb.maxScore || 0) * 0.4);
       cards.push({
         title: 'Social Interaction',
         heading: needsSupport ? 'Social interaction needs support' : 'Social interaction is on track',
@@ -519,8 +553,8 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     const speechDb = domainBreakdown.find((b: any) => b.key === 'Speech');
     const prevSpeechDb = previousScore?.domainBreakdown?.find((b: any) => b.key === 'Speech');
     if (speechDb) {
-      const needsSupport = speechDb.status.toLowerCase().includes('need') || speechDb.score > (speechDb.maxScore * 0.4);
-      const isImproved = prevSpeechDb ? speechDb.score < prevSpeechDb.score : false;
+      const needsSupport = (speechDb.status ?? '').toLowerCase().includes('need') || Number(speechDb.score || 0) > (Number(speechDb.maxScore || 0) * 0.4);
+      const isImproved = prevSpeechDb ? Number(speechDb.score || 0) < Number(prevSpeechDb.score || 0) : false;
       cards.push({
         title: 'Speech & Language',
         heading: isImproved
@@ -556,7 +590,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     // 3. Behavior Card
     const behaviorDb = domainBreakdown.find((b: any) => b.key === 'Behavior');
     if (behaviorDb) {
-      const needsSupport = behaviorDb.status.toLowerCase().includes('need') || behaviorDb.score > (behaviorDb.maxScore * 0.4);
+      const needsSupport = (behaviorDb.status ?? '').toLowerCase().includes('need') || Number(behaviorDb.score || 0) > (Number(behaviorDb.maxScore || 0) * 0.4);
       cards.push({
         title: 'Behavioral Patterns',
         heading: needsSupport ? 'Repetitive patterns need guidance' : 'Daily behaviors are well-balanced',
@@ -582,17 +616,28 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     return cards;
   }, [domainBreakdown, previousScore]);
 
-  const completedCount = isRepeat ? 2 : 1;
+  const completedCount = route?.params?.completedCount ?? (isRepeat ? 2 : 1);
   const priorityDomains = useMemo(() => {
     if (!domainBreakdown) return [];
     return domainBreakdown
-      .filter((b: any) => b.status.toLowerCase().includes('need'))
+      .filter((b: any) => (b.status ?? '').toLowerCase().includes('need'))
       .map((b: any) => b.key);
   }, [domainBreakdown]);
 
-  const reportFAQs = useMemo(() => {
-    return getDynamicFAQs(completedCount, false, priorityDomains);
-  }, [completedCount, priorityDomains]);
+  const [reportFAQs, setReportFAQs] = useState<AiFaq[]>(() =>
+    getDynamicFAQs(completedCount, false, priorityDomains)
+  );
+  useEffect(() => {
+    let mounted = true;
+    if (!childId) return;
+    getAiFaqs(childId).then((res) => {
+      if (!mounted) return;
+      if (res.success && res.data.faqs.length === 10) {
+        setReportFAQs(res.data.faqs);
+      }
+    });
+    return () => { mounted = false; };
+  }, [childId, completedCount, priorityDomains]);
 
   const [domainTab, setDomainTab] = useState<Record<string, 'attention' | 'strengths'>>(() => {
     const initial: Record<string, 'attention' | 'strengths'> = {};
@@ -607,7 +652,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
   const handleShare = async () => {
     try {
       const shareResult = await Share.share({
-        message: `Saarathi Care Screening Report\nChild: ${childName}\nResult: ${result}\nScore: ${score}/${total}\nDate: ${date}\n\nThis screening result is indicative. Consult a specialist for a detailed evaluation.`,
+        message: t('shareReportMessage', { name: childName, result: t(resultLabelKey), score: String(score), total: String(total), date }),
       });
       if (shareResult.action === Share.sharedAction) {
         if (shareResult.activityType) {
@@ -633,7 +678,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
           <BackArrow width={scaleSize(12)} height={scaleSize(21)} />
         </Pressable>
         <View style={styles.titleBlock}>
-          <Text style={[styles.headerTitle, { fontSize: scaleSize(16) }]}>Screening Report</Text>
+          <Text style={[styles.headerTitle, { fontSize: scaleSize(16) }]}>{t('screeningReport')}</Text>
           <View style={styles.dateRow}>
             <CalendarIcon width={scaleSize(14)} height={scaleSize(14)} />
             <Text style={[styles.dateText, { fontSize: scaleSize(12) }]}>{date}</Text>
@@ -653,7 +698,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
       >
         <View style={[styles.overviewCard, { padding: scaleSize(12), borderRadius: scaleSize(24) }]}>
           <View style={[styles.overviewHeader, { paddingBottom: scaleSize(10) }]}>
-            <Text style={[styles.overviewTitle, { fontSize: scaleSize(14) }]}>{childName}'s Screening Overview</Text>
+            <Text style={[styles.overviewTitle, { fontSize: scaleSize(14) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
             <View style={styles.overviewMetaRow}>
               <View style={styles.metaItem}>
                 <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
@@ -667,14 +712,14 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
 
           <View style={styles.scoreRow}>
             <View style={styles.scoreLabelRow}>
-              <Text style={[styles.scoreLabel, { fontSize: scaleSize(10) }]}>Score : </Text>
+              <Text style={[styles.scoreLabel, { fontSize: scaleSize(10) }]}>{t('score')} : </Text>
               <Text style={[styles.scoreValue, { fontSize: scaleSize(18) }]}>
                 {score} / {total} <Text style={{ color: '#6B7180' }}>*</Text>
               </Text>
             </View>
             <View style={[styles.resultBadge, { borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} />
-              <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12) }]}>{result}</Text>
+              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#BB853E" color="#BB853E" />
+              <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12) }]}>{t(resultLabelKey)}</Text>
             </View>
           </View>
 
@@ -683,7 +728,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
           </View>
 
           <Text style={[styles.disclaimer, { fontSize: scaleSize(12), marginTop: scaleSize(8) }]}>
-            * The score is indicative, not diagnostic. Consult a specialist for confirmation.
+            {t('scoreDisclaimer')}
           </Text>
 
           <View style={[styles.domainGrid, { marginTop: scaleSize(12), gap: scaleSize(12) }]}>
@@ -741,14 +786,14 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
               <FlagIcon width={scaleSize(28)} height={scaleSize(28)} />
             </View>
             <View style={styles.resultCardTitles}>
-              <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10) }]}>SCREENING RESULT</Text>
-              <Text style={[styles.resultCardResult, { fontSize: scaleSize(18) }]}>{result}</Text>
+              <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10) }]}>{t('screeningResult')}</Text>
+              <Text style={[styles.resultCardResult, { fontSize: scaleSize(18) }]}>{t(resultLabelKey)}</Text>
               <Text style={[styles.resultCardScore, { fontSize: scaleSize(12) }]}>{score} / {total}</Text>
             </View>
           </View>
           <View style={[styles.resultDivider, { height: scaleSize(1), marginVertical: scaleSize(10) }]} />
           <Text style={[styles.resultDescription, { fontSize: scaleSize(12) }]}>
-            {childName} shows mild signs across emotional and sensory domains. A detailed evaluation by doctor and early intervention can help support her growth.
+            {t(resultDescKey, { name: childName })}
           </Text>
         </View>
 
@@ -757,22 +802,22 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
             <WarningIcon width={scaleSize(24)} height={scaleSize(24)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(13) }]}>A screening is not a diagnosis</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(13) }]}>{t('screeningNotDiagnosis')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>
-              Screening results are not a diagnosis. They help identify developmental signals and guide your next steps.
+              {t('screeningNotDiagnosisBody')}
             </Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>Top Insights</Text>
+          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('topInsights')}</Text>
           {hasHistory && (
             <View style={[styles.trendCard, { padding: scaleSize(16), borderRadius: scaleSize(16), backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E4E8', marginBottom: scaleSize(16) }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: scaleSize(16) }}>
-                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(14), color: '#2D2A3A' }}>Score Trend</Text>
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(14), color: '#2D2A3A' }}>{t('scoreTrend')}</Text>
                 <View style={[styles.trendBadge, { backgroundColor: trendStatusBg, borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3), flexDirection: 'row', alignItems: 'center' }]}>
                   <Text style={[styles.trendBadgeText, { fontSize: scaleSize(10), color: trendStatusColor, fontFamily: 'Inter_700Bold' }]}>
-                    {isImproved ? '↓ Improved' : '↑ Needs Attention'}
+                    {isImproved ? '↓ ' + t('improved') : '↑ ' + t('needsAttention')}
                   </Text>
                 </View>
               </View>
@@ -890,8 +935,8 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                         </SvgText>
 
                         {/* Floating Badges */}
-                        {renderScoreBadge(x2, y2, 'TEST 1', prevScoreVal ?? 104, '#535BD8')}
-                        {renderScoreBadge(x3, y3, 'TEST 2', currentScoreVal ?? 83, isImproved ? '#1A7340' : '#E25648')}
+                        {renderScoreBadge(x2, y2, t('test1'), prevScoreVal ?? 104, '#535BD8')}
+                        {renderScoreBadge(x3, y3, t('test2'), currentScoreVal ?? 83, isImproved ? '#1A7340' : '#E25648')}
                       </G>
                     );
                   })()}
@@ -916,7 +961,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                   </Text>
                 </View>
                 <Text style={{ fontSize: scaleSize(12), color: '#18182D', fontFamily: 'Inter_600SemiBold', flex: 1 }}>
-                  {isImproved ? 'Improvement' : 'Needs attention'} since {prevDateStr}
+                  {isImproved ? t('improvement') : t('needsAttentionLowercase')} {t('since')} {prevDateStr}
                 </Text>
               </View>
             </View>
@@ -943,7 +988,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                     <View style={{ flex: 1, gap: scaleSize(4) }}>
                       <Text style={[styles.insightTitle, { fontSize: scaleSize(14) }]}>{insight.title}</Text>
                       <View style={[styles.statusBadge, { backgroundColor: insight.statusBg, borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3), alignSelf: 'flex-start' }]}>
-                        <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: insight.statusColor }]}>{insight.status}</Text>
+                        <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: insight.statusColor }]}>{t(getStatusKey(insight.status))}</Text>
                       </View>
                     </View>
                   </View>
@@ -984,9 +1029,9 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>Development by Domain</Text>
+          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('developmentByDomain')}</Text>
           <Text style={[styles.sectionSubtitle, { fontSize: scaleSize(12), marginBottom: scaleSize(8) }]}>
-            Tap any domain to see attention areas and areas working well
+            {t('tapAnyDomain')}
           </Text>
           <View style={[styles.domainList, { gap: scaleSize(12) }]}>
             {domainsDetailWithScore.map((domain) => {
@@ -1006,7 +1051,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                     <Text style={[styles.domainRowTitle, { fontSize: scaleSize(15) }]}>{domain.label}</Text>
                     <View style={styles.domainRowRight}>
                       <View style={[styles.statusBadge, { backgroundColor: domain.statusBg, borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3) }]}>
-                        <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: domain.statusColor }]}>{domain.status}</Text>
+                        <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: domain.statusColor }]}>{t(getStatusKey(domain.status))}</Text>
                       </View>
                       <Text style={[styles.domainScore, { fontSize: scaleSize(13) }]}>{domain.score}</Text>
                       {open ? <ChevronUp width={scaleSize(18)} height={scaleSize(18)} /> : <ChevronDown width={scaleSize(18)} height={scaleSize(18)} />}
@@ -1023,7 +1068,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                           ]}
                         >
                           <WarningIcon width={scaleSize(14)} height={scaleSize(14)} />
-                          <Text style={styles.domainTabText}>Attention areas ({domain.attention.length})</Text>
+                          <Text style={styles.domainTabText}>{t('attentionAreas')} ({domain.attention.length})</Text>
                         </Pressable>
                         <Pressable
                           onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'strengths' }))}
@@ -1033,13 +1078,13 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                           ]}
                         >
                           <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
-                          <Text style={styles.domainTabText}>Areas working well ({domain.strengths.length})</Text>
+                          <Text style={styles.domainTabText}>{t('areasWorkingWell')} ({domain.strengths.length})</Text>
                         </Pressable>
                       </View>
                       {tab === 'strengths' && (
                         <View style={[styles.strengthHeader, { gap: scaleSize(6) }]}>
                           <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
-                          <Text style={[styles.strengthHeaderText, { fontSize: scaleSize(12) }]}>Here's what working well !</Text>
+                          <Text style={[styles.strengthHeaderText, { fontSize: scaleSize(12) }]}>{t('heresWhatWorkingWell')}</Text>
                         </View>
                       )}
                       <View style={{ gap: scaleSize(10) }}>
@@ -1075,7 +1120,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>Learn More About Child</Text>
+          <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('learnMoreAboutChild')}</Text>
           <View style={[styles.articleList, { gap: scaleSize(8) }]}>
             {reportFAQs.map((faq, index) => {
               const isOpen = openReportFaq === index;
@@ -1106,7 +1151,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                           {faq.body}
                         </Text>
                         <Pressable style={styles.learnMoreCta}>
-                          <Text style={[styles.learnMoreCtaText, { fontSize: scaleSize(12) }]}>Ask Saarathi Care →</Text>
+                          <Text style={[styles.learnMoreCtaText, { fontSize: scaleSize(12) }]}>{t('askSaarathiCare')} →</Text>
                         </Pressable>
                       </View>
                     )}
@@ -1124,14 +1169,14 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
           style={({ pressed }) => [styles.primaryButton, { height: scaleSize(54), borderRadius: scaleSize(27), opacity: pressed ? 0.9 : 1 }]}
         >
           <DownloadIcon width={scaleSize(20)} height={scaleSize(20)} />
-          <Text style={[styles.primaryButtonText, { fontSize: scaleSize(15) }]}>Download Report</Text>
+          <Text style={[styles.primaryButtonText, { fontSize: scaleSize(15) }]}>{t('downloadReport')}</Text>
         </Pressable>
         <Pressable
           onPress={handleShare}
           style={({ pressed }) => [styles.secondaryButton, { height: scaleSize(54), borderRadius: scaleSize(27), opacity: pressed ? 0.9 : 1 }]}
         >
           <ShareIcon width={scaleSize(20)} height={scaleSize(20)} />
-          <Text style={[styles.secondaryButtonText, { fontSize: scaleSize(15) }]}>Share</Text>
+          <Text style={[styles.secondaryButtonText, { fontSize: scaleSize(15) }]}>{t('share')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -1241,7 +1286,7 @@ const styles = StyleSheet.create({
   },
   resultBadgeText: {
     fontFamily: 'Inter_700Bold',
-    color: '#BB853E',
+    color: '#18182D',
   },
   progressTrack: {
     backgroundColor: '#E2E4E8',
@@ -1252,7 +1297,7 @@ const styles = StyleSheet.create({
   },
   disclaimer: {
     fontFamily: 'Inter_400Regular',
-    color: '#757575',
+    color: '#18182D',
     lineHeight: 18,
   },
   domainGrid: {},

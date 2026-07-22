@@ -10,7 +10,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://ztdijc7myffrm9kyweojcb1w.187.127.159.169.sslip.io/api"
+        "EXPO_PUBLIC_API_URL": "http://187.127.159.169:8000/api",
+        "EXPO_PUBLIC_MOCK_API": "false"
       }
     },
     "production": {
@@ -18,7 +19,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://ztdijc7myffrm9kyweojcb1w.187.127.159.169.sslip.io/api"
+        "EXPO_PUBLIC_API_URL": "http://187.127.159.169:8000/api",
+        "EXPO_PUBLIC_MOCK_API": "false"
       }
     }
   }

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -20,8 +20,8 @@ model User {
 }
 
 model CaregiverProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
+  id          String @id @default(uuid())
+  userId      String @unique
   name        String
   role        String
   email       String?
@@ -29,8 +29,6 @@ model CaregiverProfile {
   relation    String?
   speciality  String?
   institution String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

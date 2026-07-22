@@ -15,8 +15,9 @@ import CheckmarkIcon from '../assets/figma/screen28/Checkmark1.png';
 import ResultFlagIcon from '../assets/figma/screen28/Frame-10.svg';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
-import { useLanguage } from '../context/LanguageContext';
+import { useTranslation, useDateLocale } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import { useScreening } from '../context/ScreeningContext';
 import { getScreeningHistory, getAiFaqs, ChildProfile, AiFaq } from '../api/client';
 import { getDynamicFAQs } from '../utils/qaLogic';
 import PrivacyInfoCard from '../components/PrivacyInfoCard';
@@ -34,7 +35,6 @@ import BehaviourIcon from '../assets/figma/screen16/Frame-5.svg';
 import SensoryIcon from '../assets/figma/screen16/Frame-2.svg';
 import CognitiveIcon from '../assets/figma/screen16/Frame-1.svg';
 import WarningIcon from '../assets/figma/screen16/Frame.svg';
-import LanguageIcon from '../assets/figma/home/Frame 455.svg';
 import HomeIcon from '../assets/figma/screen25/Frame.svg';
 import JournalIcon from '../assets/figma/screen25/stylus_note.svg';
 import GoalsIcon from '../assets/figma/screen25/target.svg';
@@ -59,21 +59,9 @@ const SCREENING_ROUTES = [
 ];
 
 const LEARN_ITEMS = [
-  {
-    title: 'Spot patterns early',
-    subtitle: 'Before they become concerns',
-    Icon: SpotIcon,
-  },
-  {
-    title: 'Get clear direction',
-    subtitle: 'Know exactly what to do next',
-    Icon: DirectionIcon,
-  },
-  {
-    title: 'Empower yourself',
-    subtitle: 'Move from worry to action',
-    Icon: EmpowerIcon,
-  },
+  { titleKey: 'spotPatternsEarly', subtitleKey: 'beforeTheyBecomeConcerns', Icon: SpotIcon },
+  { titleKey: 'getClearDirection', subtitleKey: 'knowWhatToDoNext', Icon: DirectionIcon },
+  { titleKey: 'empowerYourself', subtitleKey: 'moveFromWorryToAction', Icon: EmpowerIcon },
 ];
 
 const DOMAINS: { name: string; Icon: React.ComponentType<{ width?: number; height?: number }>; color: string }[] = [
@@ -141,12 +129,22 @@ const DOMAIN_SCORE_CONFIG: Record<string, { maxScore: number; ranges: { label: s
 
 const MAX_SCREENING_SCORE = 200;
 const RESCREEN_INTERVAL_DAYS = 90;
+const SCREENING_TIME_MINUTES = 15;
 
 function classifyScreeningResult(score: number) {
   if (score < 70) return 'Normal';
   if (score <= 106) return 'Mild Autism';
   if (score <= 153) return 'Moderate Autism';
   return 'Severe Autism';
+}
+
+function getResultLabelKey(result: string): string {
+  const r = result.toLowerCase();
+  if (r.includes('normal') || r.includes('no signs') || r.includes('no autism')) return 'resultNormal';
+  if (r.includes('mild')) return 'resultMildAutism';
+  if (r.includes('moderate')) return 'resultModerateAutism';
+  if (r.includes('severe')) return 'resultSevereAutism';
+  return 'screeningResult';
 }
 
 function formatScreeningDate(value?: string | null) {
@@ -193,43 +191,23 @@ function normalizeCompletedSession(session: any, caregiverName?: string) {
 }
 
 const STEPS = [
-  {
-    step: '1',
-    title: 'Submit your observations',
-    subtitle: "Answer behavioural questions on your child's day to day life",
-  },
-  {
-    step: '2',
-    title: 'Understand developmental needs',
-    subtitle: 'Get personalised and actionable insights in a report',
-  },
-  {
-    step: '3',
-    title: 'Consult a doctor',
-    subtitle: 'Share screening report to doctor for next steps',
-  },
+  { step: '1', titleKey: 'submitYourObservations', subtitleKey: 'answerBehaviouralQuestions' },
+  { step: '2', titleKey: 'understandDevelopmentalNeeds', subtitleKey: 'getPersonalisedReport' },
+  { step: '3', titleKey: 'consultDoctor', subtitleKey: 'shareReportToDoctor' },
 ];
 
 const FAQS = [
-  {
-    title: 'What is different level of Autism?',
-    body:
-      'Autism is a neurodevelopmental difference that affects how a person communicates, interacts with others, and experiences the world. It is present from early childhood, though signs may become noticeable at different ages. Every autistic person is unique, with their own strengths, challenges, and support needs.',
-  },
-  {
-    title: 'What are the suggested next steps?',
-    body: 'Use the detailed report to discuss any concerns with a developmental pediatrician and decide whether additional support would be helpful.',
-  },
-  {
-    title: 'What type of doctors should I visit?',
-    body: 'A developmental pediatrician, child psychologist, or pediatric neurologist can guide a full developmental evaluation when needed.',
-  },
+  { titleKey: 'whatIsAutism', bodyKey: 'whatIsAutismBody' },
+  { titleKey: 'whatAreSuggestedNextSteps', bodyKey: 'whatAreSuggestedNextStepsBody' },
+  { titleKey: 'whatTypeDoctorsVisit', bodyKey: 'whatTypeDoctorsVisitBody' },
 ];
 
 export default function HomeScreen({ navigation, route }: { navigation: any; route: any }) {
   const { scaleSize, padding } = useResponsive();
-  const { language, setLanguage } = useLanguage();
+  const { t, language, setLanguage } = useTranslation();
+  const dateLocale = useDateLocale();
   const { user, signOut, activeChild } = useAuth();
+  const screening = useScreening();
   const child = activeChild;
   const caregiver = user?.caregiverProfile;
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -267,6 +245,12 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     return unsubscribe;
   }, [navigation, fetchHistory]);
 
+  useEffect(() => {
+    if (screening.lastSubmittedAt) {
+      fetchHistory();
+    }
+  }, [screening.lastSubmittedAt, fetchHistory]);
+
   const completedCount = useMemo(() => {
     return screeningHistory.filter((s) => s.status === 'completed').length;
   }, [screeningHistory]);
@@ -285,7 +269,9 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     const totalQuestions = SECTION_QUESTION_COUNTS.reduce((a, b) => a + b, 0);
     const remainingQuestions = totalQuestions - totalAnswered;
     const remainingSections = 6 - sectionNumber + (answeredCount < totalForCurrent ? 1 : 0);
-    const minutesLeft = Math.max(1, Math.round(remainingQuestions * 2));
+    const minutesLeft = remainingQuestions === 0
+      ? 0
+      : Math.max(1, Math.ceil((remainingQuestions / totalQuestions) * SCREENING_TIME_MINUTES));
     return { totalAnswered, totalQuestions, remainingQuestions, remainingSections, minutesLeft };
   }, [progressParams]);
 
@@ -325,8 +311,10 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     const totalQuestions = 40;
     const remainingQuestions = totalQuestions - totalAnswered;
     const remainingSections = 6 - activeSectionIndex;
-    const minutesLeft = Math.max(1, Math.round(remainingQuestions * 2));
-    
+    const minutesLeft = remainingQuestions === 0
+      ? 0
+      : Math.max(1, Math.ceil((remainingQuestions / totalQuestions) * SCREENING_TIME_MINUTES));
+
     return {
       totalAnswered,
       totalQuestions,
@@ -348,11 +336,6 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     return (computedProgress as any)?.sectionIndex ?? 0;
   }, [progressParams, computedProgress]);
 
-  // Dynamic FAQs based on completed screening counts and active session status
-  const dynamicFAQs = useMemo(() => {
-    if (aiFaqs.length === 10) return aiFaqs;
-    return getDynamicFAQs(completedCount, activeSession !== undefined);
-  }, [aiFaqs, completedCount, activeSession]);
 
   const LANGUAGES = ['English', 'Gujarati', 'Hindi', 'Kannada'];
 
@@ -367,13 +350,34 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
   const completedSessions = useMemo(() => {
     return screeningHistory
       .filter((s) => s.status === 'completed')
-      .map((session) => normalizeCompletedSession(session, caregiver?.name));
-  }, [screeningHistory, caregiver?.name]);
+      .map((session) => normalizeCompletedSession(session, caregiver?.name || t('caregiver')));
+  }, [screeningHistory, caregiver?.name, t]);
 
   const latestCompletedSession = useMemo(() => {
     if (completedSessions.length === 0) return null;
     return completedSessions[0];
   }, [completedSessions]);
+
+  const homePriorityDomains = useMemo(() => {
+    if (!latestCompletedSession?.domainBreakdown) return [];
+    return latestCompletedSession.domainBreakdown
+      .filter((b: any) => (b.status ?? '').toLowerCase().includes('need'))
+      .map((b: any) => b.key);
+  }, [latestCompletedSession]);
+
+  // Dynamic FAQs based on completed screening counts and active session status
+  const dynamicFAQs = useMemo(() => {
+    if (aiFaqs.length === 10) return aiFaqs;
+    const inProgress = activeSession !== undefined;
+    let progressPercent = 0;
+    const completedDomains: string[] = [];
+    if (inProgress && continueProgress) {
+      progressPercent = Math.round((continueProgress.totalAnswered / continueProgress.totalQuestions) * 100);
+      const DOMAIN_KEYS = ['Social', 'Emotion', 'Speech', 'Behavior', 'Sensory', 'Cognitive'];
+      completedDomains.push(...DOMAIN_KEYS.slice(0, continueSectionIndex));
+    }
+    return getDynamicFAQs(completedCount, inProgress, homePriorityDomains, progressPercent, completedDomains);
+  }, [aiFaqs, completedCount, activeSession, continueProgress, continueSectionIndex, homePriorityDomains]);
 
   // Days since last screening
   const daysSinceLastScreening = useMemo(() => {
@@ -394,7 +398,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     if (latestCompletedSession && latestCompletedSession.domainBreakdown) {
       const bd = latestCompletedSession.domainBreakdown.find((b: any) => b.key === key);
       if (bd) {
-        const statusLower = bd.status.toLowerCase();
+        const statusLower = (bd.status ?? '').toLowerCase();
         return statusLower.includes('great') || statusLower.includes('well');
       }
     }
@@ -453,84 +457,73 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
       });
     }
 
+    const prevSession = completedSessions[1];
+    const isRepeat = completedSessions.length > 1;
+    const previousScore = prevSession ? { totalScore: prevSession.score, result: prevSession.result, domainBreakdown: prevSession.domainBreakdown, date: prevSession.date } : null;
+
     navigation.navigate(targetRoute, {
-      childName: child?.name || 'Nitya',
+      childName: child?.name || t('yourChild'),
       score: session.score,
       total: session.total,
       result: session.result,
-      date: session.date || formatScreeningDate(session.completedAt) || 'Latest screening',
-      screener: session.screener || caregiver?.name || 'Caregiver',
+      date: session.date || formatScreeningDate(session.completedAt) || t('latestScreening'),
+      screener: session.screener || caregiver?.name || t('caregiver'),
       domainBreakdown: session.domainBreakdown,
       domainAnswers: answers,
+      isRepeat,
+      previousScore,
+      completedCount: completedSessions.length,
+      childId: child?.id,
     });
-  }, [navigation, latestCompletedSession, child, caregiver?.name]);
+  }, [navigation, latestCompletedSession, child, caregiver?.name, completedSessions]);
 
   const insights = useMemo(() => {
     if (!latestCompletedSession) return [];
     
     const baseInsights = [
       {
-        title: 'Behavioural Patterns',
-        heading: 'Repetitive behaviours are in control',
-        status: 'Doing well',
+        titleKey: 'behaviouralPatterns',
+        headingKey: 'repetitiveBehavioursControl',
+        statusKey: 'doingWell',
         statusColor: '#1A7340',
         statusBg: '#E8F7F0',
         Icon: BehaviourIcon,
         iconBg: '#F04D9B',
-        bullets: [
-          'Flexible with daily routines',
-          'No repetitive behaviour concerns',
-          'Transitions are manageable',
-        ],
+        bulletKeys: ['flexibleDailyRoutines', 'noRepetitiveConcerns', 'transitionsManageable'],
       },
       {
-        title: 'Speech & Language',
-        heading: 'Speech is improving',
-        status: 'Doing great',
+        titleKey: 'speechAndLanguage',
+        headingKey: 'speechIsImproving',
+        statusKey: 'doingGreat',
         statusColor: '#1A7340',
         statusBg: '#E8F7F0',
         Icon: SpeechIcon,
         iconBg: '#1EA7F2',
-        bullets: [
-          '+12% from last screening.',
-          'Better communication outcomes observed',
-        ],
+        bulletKeys: ['plus12PercentFromLastScreening', 'betterCommunicationOutcomes'],
       },
       {
-        title: 'Social Development',
-        heading: 'Social interactions are progressing',
-        status: 'Doing well',
+        titleKey: 'socialDevelopment',
+        headingKey: 'socialInteractionsProgressing',
+        statusKey: 'doingWell',
         statusColor: '#1A7340',
         statusBg: '#E8F7F0',
         Icon: SocialIcon,
         iconBg: '#9B4FD6',
-        bullets: [
-          'Engages with peers appropriately',
-          'Eye contact is improving',
-          'Responds to social cues',
-        ],
+        bulletKeys: ['engagesWithPeers', 'eyeContactImproving', 'respondsToSocialCues'],
       },
     ];
 
     if (latestCompletedSession.result.includes('Severe') || latestCompletedSession.result.includes('Moderate') || latestCompletedSession.result.includes('Mild')) {
-      baseInsights[0].status = 'Needs support';
+      baseInsights[0].statusKey = 'needsSupport';
       baseInsights[0].statusColor = '#D12B2B';
       baseInsights[0].statusBg = '#FDF2F2';
-      baseInsights[0].heading = 'Repetitive behaviours need monitoring';
-      baseInsights[0].bullets = [
-        'Frequent hand flapping or rocking observed',
-        'Difficulty adjusting to routine changes',
-        'Strong attachment to specific items',
-      ];
-      baseInsights[1].status = 'Needs support';
+      baseInsights[0].headingKey = 'repetitiveBehavioursNeedMonitoring';
+      baseInsights[0].bulletKeys = ['handFlappingObserved', 'difficultyRoutineChanges', 'strongAttachmentItems'];
+      baseInsights[1].statusKey = 'needsSupport';
       baseInsights[1].statusColor = '#D12B2B';
       baseInsights[1].statusBg = '#FDF2F2';
-      baseInsights[1].heading = 'Speech development needs attention';
-      baseInsights[1].bullets = [
-        'Limited vocabulary for age group',
-        'Difficulty forming complete sentences',
-        'Consider speech therapy evaluation',
-      ];
+      baseInsights[1].headingKey = 'speechNeedsAttention';
+      baseInsights[1].bulletKeys = ['limitedVocabulary', 'difficultyFormingSentences', 'considerSpeechTherapy'];
     }
     return baseInsights;
   }, [latestCompletedSession]);
@@ -557,17 +550,26 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
       });
     }
 
+    const sessionIndex = completedSessions.findIndex((s: any) => s.date === session.date && s.score === session.score);
+    const prevSession = completedSessions[sessionIndex + 1];
+    const isRepeat = prevSession !== undefined;
+    const previousScore = prevSession ? { totalScore: prevSession.score, result: prevSession.result, domainBreakdown: prevSession.domainBreakdown, date: prevSession.date } : null;
+
     navigation.navigate(targetRoute, {
-      childName: child?.name || 'Child',
+      childName: child?.name || t('yourChild'),
       score: session.score,
       total: session.total,
       result: session.result,
       date: session.date || '',
-      screener: session.screener || 'Caregiver',
+      screener: session.screener || t('caregiver'),
       domainBreakdown: session.domainBreakdown,
       domainAnswers: answers,
+      isRepeat,
+      previousScore,
+      completedCount: completedSessions.length,
+      childId: child?.id,
     });
-  }, [navigation, child]);
+  }, [navigation, child, completedSessions]);
 
   const continueProgressPercent = useMemo(() => {
     if (!continueProgress) return 0;
@@ -599,25 +601,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               </View>
               <View>
                 <View style={styles.nameRow}>
-                  <Text style={[styles.name, { fontSize: scaleSize(15) }]}>{child?.name || 'Child'}</Text>
+                  <Text style={[styles.name, { fontSize: scaleSize(15) }]}>{child?.name || t('yourChild')}</Text>
                   <Text style={[styles.chevron, { fontSize: scaleSize(16) }]}>▾</Text>
                 </View>
-                <Text style={[styles.subtitle, { fontSize: scaleSize(12) }]}>{child?.ageInMonths ? `${Math.floor(child.ageInMonths / 12)} yrs ${child.ageInMonths % 12} mos` : ''}</Text>
+                <Text style={[styles.subtitle, { fontSize: scaleSize(12) }]}>{child?.ageInMonths ? `${Math.floor(child.ageInMonths / 12)} ${dateLocale.years} ${child.ageInMonths % 12} ${dateLocale.months}` : ''}</Text>
               </View>
             </Pressable>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }}>
-              <Pressable
-                onPress={() => setLanguageModalVisible(true)}
-                style={[styles.languageButton, { width: scaleSize(44), height: scaleSize(44), borderRadius: scaleSize(12) }]}
-                hitSlop={scaleSize(10)}
-              >
-                <LanguageIcon width={scaleSize(24)} height={scaleSize(24)} />
-              </Pressable>
-              <Pressable onPress={() => setDrawerOpen(true)} style={styles.menuButton} hitSlop={scaleSize(10)}>
-                <MenuIconSvg width={scaleSize(22)} height={scaleSize(22)} />
-              </Pressable>
-            </View>
+            <Pressable onPress={() => setDrawerOpen(true)} style={styles.menuButton} hitSlop={scaleSize(10)}>
+              <MenuIconSvg width={scaleSize(22)} height={scaleSize(22)} />
+            </Pressable>
           </View>
 
           {latestCompletedSession ? (
@@ -627,12 +620,12 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               {daysSinceLastScreening !== null && daysSinceLastScreening >= RESCREEN_INTERVAL_DAYS && (
                 <View style={[styles.rescreenBanner, { borderRadius: scaleSize(16), padding: scaleSize(16) }]}>
                   <Text style={[styles.rescreenMeta, { fontSize: scaleSize(11), marginBottom: scaleSize(4) }]}>
-                    LAST SCREENED {daysSinceLastScreening} DAYS AGO
+                    {t('lastScreenedXDaysAgo', { days: String(daysSinceLastScreening) })}
                   </Text>
                   <Text style={[styles.rescreenTitle, { fontSize: scaleSize(18), marginBottom: scaleSize(12) }]}>
-                    Time for a re-screen?{`\n`}
+                    {t('timeForRescreen')}{`\n`}
                     <Text style={[styles.rescreenSub, { fontSize: scaleSize(13) }]}>
-                      Track how {child?.name || 'your child'} is progressing since last assessment.
+                      {t('trackHowProgressing', { name: child?.name || t('yourChild') })}
                     </Text>
                   </Text>
                   <Pressable
@@ -642,16 +635,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                       { borderRadius: scaleSize(24), height: scaleSize(46), opacity: pressed ? 0.88 : 1 },
                     ]}
                   >
-                    <Text style={[styles.rescreenCtaText, { fontSize: scaleSize(15) }]}>Take re-screen</Text>
+                    <Text style={[styles.rescreenCtaText, { fontSize: scaleSize(15) }]}>{t('takeRescreen')}</Text>
                   </Pressable>
                 </View>
               )}
 
-              <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), lineHeight: scaleSize(20), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>Latest Screening</Text>
+              <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), lineHeight: scaleSize(20), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>{t('latestScreening')}</Text>
               
               <View style={[styles.overviewCard, { paddingTop: scaleSize(14), paddingHorizontal: scaleSize(28), borderRadius: scaleSize(20), backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4E7FB', overflow: 'hidden' }]}>
                 <Text style={[styles.overviewTitle, { fontSize: scaleSize(16), fontFamily: 'Inter_700Bold', color: '#2D2A3A' }]}>
-                  {child?.name || 'Child'}'s Screening Overview
+                  {t('screeningOverview', { name: child?.name || t('yourChild') })}
                 </Text>
                 
                 <View style={[styles.overviewMetaRow, { marginTop: scaleSize(8) }]}>
@@ -664,7 +657,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                   <View style={styles.metaItem}>
                     <PersonIcon width={scaleSize(16)} height={scaleSize(16)} />
                     <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>
-                      {latestCompletedSession.screener || 'Caregiver'}
+                      {latestCompletedSession.screener || t('caregiver')}
                     </Text>
                   </View>
                 </View>
@@ -673,7 +666,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
 
                 <View style={[styles.scoreRow, { marginTop: scaleSize(14) }]}>
                   <View style={styles.scoreLabelRow}>
-                    <Text style={[styles.scoreLabel, { fontSize: scaleSize(12) }]}>Score : </Text>
+                    <Text style={[styles.scoreLabel, { fontSize: scaleSize(12) }]}>{t('scoreLabel')}</Text>
                     <Text style={[styles.scoreValue, { fontSize: scaleSize(20), fontFamily: 'Inter_800ExtraBold', color: '#18182D' }]}>
                       {latestCompletedSession.score} / {latestCompletedSession.total}
                     </Text>
@@ -692,7 +685,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                       <View style={[styles.resultBadge, { backgroundColor: colors.bg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
                         <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={colors.text} color={colors.text} />
                         <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: colors.text, marginLeft: scaleSize(4), fontFamily: 'Inter_700Bold' }]}>
-                          {latestCompletedSession.result}
+                          {t(getResultLabelKey(latestCompletedSession.result))}
                         </Text>
                       </View>
                     );
@@ -716,7 +709,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 })()}
 
                 <Text style={[styles.disclaimer, { fontSize: scaleSize(11), marginTop: scaleSize(9), color: '#6B7180', lineHeight: scaleSize(15) }]}>
-                  * The score is indicative, not diagnostic. Consult a specialist for confirmation.
+                  {t('scoreIndicative')}
                 </Text>
 
                 <View style={[styles.domainGrid, { marginTop: scaleSize(18), gap: scaleSize(14) }]}>
@@ -814,7 +807,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                   ]}
                 >
                   <Text style={{ fontFamily: 'Inter_700Bold', color: '#FFF', fontSize: scaleSize(16) }}>
-                    View Detailed Report
+                    {t('viewDetailedReport')}
                   </Text>
                 </Pressable>
               </View>
@@ -822,16 +815,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               <PrivacyInfoCard
                 icon={<WarningIcon width={scaleSize(20)} height={scaleSize(20)} />}
                 backgroundColor="#FFFFFF"
-                title="A screening is not a diagnosis."
-                titleColor="#18182D"
-                subtitle="Screening results are not a diagnosis. They help identify developmental signals and guide your next steps."
+                title={t('screeningNotDiagnosis')}
+                titleColor="#535BD8"
+                subtitle={t('screeningNotDiagnosisBody')}
               />
 
               {completedSessions.length > 1 && (
                 <ScreeningTrendCard sessions={completedSessions} scaleSize={scaleSize} />
               )}
 
-              <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>Top Insights</Text>
+              <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>{t('topInsights')}</Text>
               
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: scaleSize(15) }}>
                 {insights.map((insight, index) => {
@@ -839,7 +832,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                   const isExpanded = expandedInsight === index;
                   return (
                     <Pressable
-                      key={insight.title}
+                      key={insight.titleKey}
                       onPress={() => setExpandedInsight(isExpanded ? null : index)}
                       style={[styles.insightCard, { paddingVertical: scaleSize(17), paddingHorizontal: scaleSize(15), borderRadius: scaleSize(20), width: scaleSize(255), minHeight: scaleSize(206), backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E4E8' }]}
                     >
@@ -848,16 +841,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                           <Icon width={scaleSize(27)} height={scaleSize(27)} />
                         </View>
                         <View style={{ marginLeft: scaleSize(10), flex: 1 }}>
-                          <Text style={[styles.insightTitle, { fontSize: scaleSize(13), fontFamily: 'Inter_700Bold', color: '#18182D', lineHeight: scaleSize(20) }]}>{insight.title}</Text>
+                          <Text style={[styles.insightTitle, { fontSize: scaleSize(13), fontFamily: 'Inter_700Bold', color: '#18182D', lineHeight: scaleSize(20) }]}>{t(insight.titleKey)}</Text>
                           <View style={[styles.statusBadgeInline, { backgroundColor: insight.statusBg, borderRadius: scaleSize(11), paddingHorizontal: scaleSize(12), paddingVertical: scaleSize(6), alignSelf: 'flex-start', marginTop: scaleSize(4), justifyContent: 'center', alignItems: 'center' }]}>
-                            <Text style={[styles.statusBadgeText, { fontSize: scaleSize(12), color: insight.statusColor, fontFamily: 'Inter_700Bold' }]}>{insight.status}</Text>
+                            <Text style={[styles.statusBadgeText, { fontSize: scaleSize(12), color: insight.statusColor, fontFamily: 'Inter_700Bold' }]}>{t(insight.statusKey)}</Text>
                           </View>
                         </View>
                       </View>
-                      <Text style={[styles.insightHeading, { fontSize: scaleSize(16), marginTop: scaleSize(22), fontFamily: 'Inter_700Bold', color: '#18182D', lineHeight: scaleSize(20) }]}>{insight.heading}</Text>
+                      <Text style={[styles.insightHeading, { fontSize: scaleSize(16), marginTop: scaleSize(22), fontFamily: 'Inter_700Bold', color: '#18182D', lineHeight: scaleSize(20) }]}>{t(insight.headingKey)}</Text>
                       <View style={{ marginTop: scaleSize(8), gap: scaleSize(4) }}>
-                        {insight.bullets.map((b, i) => (
-                          <Text key={i} style={[styles.bullet, { fontSize: scaleSize(12), fontFamily: 'Inter_500Medium', color: '#6B7180', lineHeight: scaleSize(16) }]}>• {b}</Text>
+                        {insight.bulletKeys.map((b: string, i: number) => (
+                          <Text key={i} style={[styles.bullet, { fontSize: scaleSize(12), fontFamily: 'Inter_500Medium', color: '#6B7180', lineHeight: scaleSize(16) }]}>• {t(b)}</Text>
                         ))}
                       </View>
                     </Pressable>
@@ -883,7 +876,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               {/* Screening History */}
               {completedSessions.length > 1 && (
                 <>
-                  <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>Screening History</Text>
+                  <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>{t('screeningHistory')}</Text>
                   <View style={{ gap: scaleSize(10) }}>
                     {completedSessions.map((session, index) => {
                       const sessionColors = session.result.includes('No Signs') || session.result.includes('No Autism') || session.result.includes('Normal')
@@ -903,7 +896,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                               </View>
                               <View style={[styles.metaItem, { marginTop: scaleSize(4) }]}>
                                 <PersonIcon width={scaleSize(14)} height={scaleSize(14)} />
-                                <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{session.screener || 'Caregiver'}</Text>
+                                <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{session.screener || t('caregiver')}</Text>
                               </View>
                             </View>
                           </View>
@@ -914,7 +907,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                             <View style={[styles.resultBadge, { backgroundColor: sessionColors.bg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(5) }]}>
                               <ResultFlagIcon width={scaleSize(12)} height={scaleSize(12)} fill={sessionColors.text} color={sessionColors.text} />
                               <Text style={[styles.resultBadgeText, { fontSize: scaleSize(11), color: sessionColors.text, marginLeft: scaleSize(4), fontFamily: 'Inter_700Bold' }]}>
-                                {session.result}
+                                {t(getResultLabelKey(session.result))}
                               </Text>
                             </View>
                             <Pressable
@@ -924,7 +917,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                                 { borderRadius: scaleSize(20), paddingHorizontal: scaleSize(14), paddingVertical: scaleSize(8), opacity: pressed ? 0.85 : 1 },
                               ]}
                             >
-                              <Text style={[styles.viewDetailsBtnText, { fontSize: scaleSize(12) }]}>View details</Text>
+                              <Text style={[styles.viewDetailsBtnText, { fontSize: scaleSize(12) }]}>{t('viewDetails')}</Text>
                             </Pressable>
                           </View>
                         </View>
@@ -934,7 +927,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 </>
               )}
 
-              <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), marginTop: scaleSize(4), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>Learn More About Child</Text>
+              <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), marginTop: scaleSize(4), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>{t('learnMoreAboutChild')}</Text>
               
               <View style={{ gap: scaleSize(10) }}>
                 {FAQS.slice(0, 3).map((faq, index) => {
@@ -949,7 +942,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                       padding={scaleSize(12)}
                     >
                       <View style={[styles.learnMoreHeader, { flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }]}>
-                        <Text style={[styles.learnMoreTitle, { fontSize: scaleSize(14), flex: 1, fontFamily: 'Inter_500Medium', color: '#18182D' }]}>{faq.title}</Text>
+                        <Text style={[styles.learnMoreTitle, { fontSize: scaleSize(14), flex: 1, fontFamily: 'Inter_500Medium', color: '#18182D' }]}>{t(faq.titleKey)}</Text>
                         <View style={[styles.learnMoreToggle, { width: scaleSize(20), height: scaleSize(20), borderRadius: scaleSize(10), backgroundColor: '#5963E1', justifyContent: 'center', alignItems: 'center' }]}>
                           <Text style={{ color: '#FFFFFF', fontSize: scaleSize(16), lineHeight: scaleSize(18), fontWeight: '700' }}>{isExpanded ? '−' : '+'}</Text>
                         </View>
@@ -957,14 +950,14 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                       {isExpanded && (
                         <View style={{ marginTop: scaleSize(10) }}>
                           <Text style={[styles.learnMoreBody, { fontSize: scaleSize(12), fontFamily: 'Inter_400Regular', color: '#454545', lineHeight: scaleSize(15) }]}>
-                            {faq.body}
+                            {t(faq.bodyKey)}
                           </Text>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6), marginTop: scaleSize(10) }}>
                             <View style={[styles.learnMoreToggle, { width: scaleSize(20), height: scaleSize(20), borderRadius: scaleSize(10), backgroundColor: '#F3F2FF', justifyContent: 'center', alignItems: 'center' }]}>
                               <Text style={{ color: '#5963E1', fontSize: scaleSize(12), fontWeight: '700' }}>→</Text>
                             </View>
                             <Text style={{ fontSize: scaleSize(12), fontFamily: 'Inter_500Medium', color: '#5963E1', lineHeight: scaleSize(15) }}>
-                              Ask Saarathi Care →
+                              {t('askSaarathiCare')}
                             </Text>
                           </View>
                         </View>
@@ -981,20 +974,20 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 onContinue={continueProgress ? handleContinue : undefined}
                 onStartNew={handleStartNew}
                 progress={continueProgress}
-                childName={child?.name || 'Child'}
+                childName={child?.name || t('yourChild')}
                 style={{ marginHorizontal: padding }}
               />
 
-              <Section title="Why early screening?" body="Catching developmental patterns early means child gets the right support at the right time." scaleSize={scaleSize}>
+              <Section title={t('whyEarlyScreening')} body={t('whyEarlyScreeningBody')} scaleSize={scaleSize}>
                 <View style={{ gap: scaleSize(12), marginTop: scaleSize(16) }}>
                   {LEARN_ITEMS.map((item) => {
                     const Icon = item.Icon;
                     return (
-                      <View key={item.title} style={styles.learnCard}>
+                      <View key={item.titleKey} style={styles.learnCard}>
                         <Icon width={scaleSize(48)} height={scaleSize(48)} />
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.learnTitle, { fontSize: scaleSize(16) }]}>{item.title}</Text>
-                          <Text style={[styles.learnSubtitle, { fontSize: scaleSize(12), marginTop: scaleSize(4) }]}>{item.subtitle}</Text>
+                          <Text style={[styles.learnTitle, { fontSize: scaleSize(16) }]}>{t(item.titleKey)}</Text>
+                          <Text style={[styles.learnSubtitle, { fontSize: scaleSize(12), marginTop: scaleSize(4) }]}>{t(item.subtitleKey)}</Text>
                         </View>
                       </View>
                     );
@@ -1002,7 +995,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 </View>
               </Section>
 
-              <Section title="What will you learn?" body="A personalized report across 6 domains" scaleSize={scaleSize}>
+              <Section title={t('whatWillYouLearn')} body={t('whatWillYouLearnBody')} scaleSize={scaleSize}>
                 <View style={{ gap: scaleSize(12), marginTop: scaleSize(16) }}>
                   {domainColumns.map((row, rowIndex) => (
                     <View key={`domain-row-${rowIndex}`} style={{ flexDirection: 'row', gap: scaleSize(12) }}>
@@ -1027,7 +1020,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 </View>
               </Section>
 
-              <Section title="How does it work?" scaleSize={scaleSize}>
+              <Section title={t('howDoesItWork')} scaleSize={scaleSize}>
                 <View style={{ gap: 0, marginTop: scaleSize(16) }}>
                   {STEPS.map((item, index) => (
                     <View key={item.step} style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
@@ -1040,15 +1033,15 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                         )}
                       </View>
                       <View style={{ flex: 1, paddingLeft: scaleSize(14), paddingTop: scaleSize(4) }}>
-                        <Text style={[styles.stepTitle, { fontSize: scaleSize(16) }]}>{item.title}</Text>
-                        <Text style={[styles.stepBody, { fontSize: scaleSize(13), lineHeight: scaleSize(18), marginTop: scaleSize(4) }]}>{item.subtitle}</Text>
+                        <Text style={[styles.stepTitle, { fontSize: scaleSize(16) }]}>{t(item.titleKey)}</Text>
+                        <Text style={[styles.stepBody, { fontSize: scaleSize(13), lineHeight: scaleSize(18), marginTop: scaleSize(4) }]}>{t(item.subtitleKey)}</Text>
                       </View>
                     </View>
                   ))}
                 </View>
               </Section>
 
-              <Section title="Learn before you begin" scaleSize={scaleSize}>
+              <Section title={t('learnBeforeYouBegin')} scaleSize={scaleSize}>
                 <View style={{ gap: scaleSize(10), marginTop: scaleSize(12) }}>
                   {dynamicFAQs.map((faq, index) => {
                     const isOpen = openFaq === index;
@@ -1078,8 +1071,9 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 <PrivacyInfoCard
                   icon={<WarningIcon width={scaleSize(20)} height={scaleSize(20)} />}
                   backgroundColor={colors.selectedBackground}
-                  title="A screening is not a diagnosis."
-                  subtitle="Screening results are not a diagnosis. They help identify developmental signals and guide your next steps."
+                  title={t('screeningNotDiagnosis')}
+                  titleColor="#535BD8"
+                  subtitle={t('screeningNotDiagnosisBody')}
                 />
               </View>
             </>
@@ -1095,7 +1089,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 { height: scaleSize(54), borderRadius: scaleSize(28), opacity: pressed ? 0.9 : 1 },
               ]}
             >
-              <Text style={[styles.progressPrimaryText, { fontSize: scaleSize(16) }]}>Start Screening for free</Text>
+              <Text style={[styles.progressPrimaryText, { fontSize: scaleSize(16) }]}>{t('startScreeningFree')}</Text>
             </Pressable>
           </View>
         )}
@@ -1143,7 +1137,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
         <Pressable style={styles.languageBackdrop} onPress={() => setLanguageModalVisible(false)} />
         <View style={styles.languageSheet}>
           <View style={[styles.languageHandle, { width: scaleSize(40), height: scaleSize(4), borderRadius: scaleSize(999) }]} />
-          <Text style={[styles.languageTitle, { fontSize: scaleSize(18) }]}>Select Language</Text>
+          <Text style={[styles.languageTitle, { fontSize: scaleSize(18) }]}>{t('selectLanguage')}</Text>
           <View style={{ gap: scaleSize(10), marginTop: scaleSize(16) }}>
             {LANGUAGES.map((lang) => {
               const selected = language === lang;
@@ -1199,14 +1193,14 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               <Pressable style={styles.progressModalClose} onPress={() => setPlusMenuVisible(false)}>
                 <CloseIcon width={scaleSize(16)} height={scaleSize(16)} />
               </Pressable>
-              <Text style={[styles.progressModalLabel, { fontSize: scaleSize(12) }]}>Before you continue</Text>
-              <Text style={[styles.progressModalTitle, { fontSize: scaleSize(22) }]}>You already have a screening in progress</Text>
+              <Text style={[styles.progressModalLabel, { fontSize: scaleSize(12) }]}>{t('beforeYouContinue')}</Text>
+              <Text style={[styles.progressModalTitle, { fontSize: scaleSize(22) }]}>{t('screeningInProgress')}</Text>
               <View style={[styles.progressInfoBox, { padding: scaleSize(14), marginTop: scaleSize(14) }]}>
                 <View style={styles.progressInfoRow}>
                   <BookmarkIcon width={scaleSize(24)} height={scaleSize(24)} />
                   <View style={{ marginLeft: scaleSize(12) }}>
-                    <Text style={[styles.progressInfoTitle, { fontSize: scaleSize(14) }]}>Unfinished Screening • 2 Jun 2026</Text>
-                    <Text style={[styles.progressInfoSubtitle, { fontSize: scaleSize(12) }]}>Section {continueSectionIndex + 1} of 6 · {continueProgressPercent}% complete</Text>
+                    <Text style={[styles.progressInfoTitle, { fontSize: scaleSize(14) }]}>{t('unfinishedScreening')}</Text>
+                    <Text style={[styles.progressInfoSubtitle, { fontSize: scaleSize(12) }]}>{t('sectionXOfYComplete', { section: String(continueSectionIndex + 1), total: '6', percent: String(continueProgressPercent) })}</Text>
                   </View>
                 </View>
                 <View style={styles.progressDots}>
@@ -1219,13 +1213,13 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 onPress={handleContinue}
                 style={({ pressed }) => [styles.progressPrimaryCta, { opacity: pressed ? 0.9 : 1, height: scaleSize(54), marginTop: scaleSize(16) }]}
               >
-                <Text style={[styles.progressPrimaryText, { fontSize: scaleSize(16) }]}>Continue where I left off</Text>
+                <Text style={[styles.progressPrimaryText, { fontSize: scaleSize(16) }]}>{t('continueScreening')}</Text>
               </Pressable>
               <Pressable
                 onPress={handleStartNew}
                 style={({ pressed }) => [styles.progressSecondaryCta, { opacity: pressed ? 0.9 : 1, height: scaleSize(54), marginTop: scaleSize(12) }]}
               >
-                <Text style={[styles.progressSecondaryText, { fontSize: scaleSize(16) }]}>Start New Screening</Text>
+                <Text style={[styles.progressSecondaryText, { fontSize: scaleSize(16) }]}>{t('startNewScreening')}</Text>
               </Pressable>
             </View>
           </View>
@@ -1242,6 +1236,7 @@ function ScreeningTrendCard({
   sessions: any[];
   scaleSize: (size: number) => number;
 }) {
+  const { t } = useTranslation();
   const plottedSessions = [...sessions]
     .slice(0, 4)
     .reverse()
@@ -1263,19 +1258,23 @@ function ScreeningTrendCard({
     const y = verticalPadding + (1 - session.score / maxScore) * (chartHeight - verticalPadding * 2);
     return { x, y, ...session };
   });
-  const linePoints = points.map((point) => `${point.x},${point.y}`).join(' ');
   const firstScore = plottedSessions[0].score;
   const lastScore = plottedSessions[plottedSessions.length - 1].score;
   const change = lastScore - firstScore;
-  const changeText = `${change > 0 ? '+' : ''}${change}`;
-  const improvementText = change < 0 ? 'Improvement since last screening' : change > 0 ? 'Higher score since last screening' : 'No change since last screening';
+  const isImproved = change < 0;
+  const percentChange = firstScore !== 0 ? Math.round((change / firstScore) * 100) : 0;
+  const changeText = `${isImproved ? '-' : '+'}${Math.abs(percentChange)}%`;
+  const improvementText = change < 0 ? t('improvementSinceLast') : change > 0 ? t('higherScoreSinceLast') : t('noChangeSinceLast');
+  const trendStatusColor = isImproved ? '#1A7340' : change > 0 ? '#E25648' : '#6B7180';
+  const trendStatusBg = isImproved ? '#E8F7F0' : change > 0 ? '#FDF0EB' : '#F4F5F5';
+  const trendStatusText = isImproved ? t('improved') : change > 0 ? t('needsAttention') : t('inTrack');
 
   return (
     <View style={[styles.trendCard, { borderRadius: scaleSize(14), padding: scaleSize(12) }]}>
       <View style={styles.trendHeader}>
-        <Text style={[styles.trendTitle, { fontSize: scaleSize(12) }]}>Score trend</Text>
-        <View style={[styles.trendStatus, { borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3) }]}>
-          <Text style={[styles.trendStatusText, { fontSize: scaleSize(9) }]}>In track</Text>
+        <Text style={[styles.trendTitle, { fontSize: scaleSize(12) }]}>{t('scoreTrend')}</Text>
+        <View style={[styles.trendStatus, { borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3), backgroundColor: trendStatusBg }]}>
+          <Text style={[styles.trendStatusText, { fontSize: scaleSize(9), color: trendStatusColor }]}>{trendStatusText}</Text>
         </View>
       </View>
       <Svg width={chartWidth} height={chartHeight} accessibilityLabel="Screening score trend">
@@ -1283,26 +1282,29 @@ function ScreeningTrendCard({
           const y = verticalPadding + ratio * (chartHeight - verticalPadding * 2);
           return <Line key={ratio} x1={horizontalPadding} y1={y} x2={chartWidth - horizontalPadding} y2={y} stroke="#E6E9F3" strokeWidth={1} />;
         })}
-        <Polyline points={linePoints} fill="none" stroke="#5963E1" strokeWidth={scaleSize(2)} />
-        {points.map((point, index) => (
-          <React.Fragment key={`${point.date}-${index}`}>
-            <Circle cx={point.x} cy={point.y} r={scaleSize(3)} fill="#FFFFFF" stroke="#5963E1" strokeWidth={scaleSize(1.5)} />
-            <SvgText
-              x={point.x}
-              y={chartHeight - scaleSize(1)}
-              textAnchor="middle"
-              fontFamily="Inter_500Medium"
-              fontSize={scaleSize(8)}
-              fill="#6B7180"
-            >
-              {point.date.split(' ').slice(0, 2).join(' ')}
-            </SvgText>
-          </React.Fragment>
-        ))}
+        <Polyline points={points.map((p) => `${p.x},${p.y}`).join(' ')} fill="none" stroke={isImproved ? '#1A7340' : change > 0 ? '#E25648' : '#5963E1'} strokeWidth={scaleSize(2)} />
+        {points.map((point, index) => {
+          const isLast = index === points.length - 1;
+          return (
+            <React.Fragment key={`${point.date}-${index}`}>
+              <Circle cx={point.x} cy={point.y} r={scaleSize(3)} fill="#FFFFFF" stroke={isLast ? trendStatusColor : '#5963E1'} strokeWidth={scaleSize(1.5)} />
+              <SvgText
+                x={point.x}
+                y={chartHeight - scaleSize(1)}
+                textAnchor="middle"
+                fontFamily="Inter_500Medium"
+                fontSize={scaleSize(8)}
+                fill={isLast ? trendStatusColor : '#6B7180'}
+              >
+                {point.date.split(' ').slice(0, 2).join(' ')}
+              </SvgText>
+            </React.Fragment>
+          );
+        })}
       </Svg>
       <View style={[styles.trendFooter, { marginTop: scaleSize(6) }]}>
-        <View style={[styles.trendChange, { borderRadius: scaleSize(12), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(4) }]}>
-          <Text style={[styles.trendChangeText, { fontSize: scaleSize(10) }]}>{changeText} · {Math.abs(change)}%</Text>
+        <View style={[styles.trendChange, { borderRadius: scaleSize(12), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(4), backgroundColor: trendStatusBg }]}>
+          <Text style={[styles.trendChangeText, { fontSize: scaleSize(10), color: trendStatusColor }]}>{changeText}</Text>
         </View>
         <Text style={[styles.trendFooterText, { fontSize: scaleSize(10) }]}>{improvementText}</Text>
       </View>

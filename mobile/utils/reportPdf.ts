@@ -149,6 +149,12 @@ type CategoryConfig = {
 function normalizeStatus(status?: string): string {
   if (!status) return 'average';
   const s = status.toLowerCase().trim();
+  if (s.includes('doing great')) return 'excellent';
+  if (s.includes('doing well')) return 'good';
+  if (s.includes('making progress')) return 'average';
+  if (s.includes('needs extra support')) return 'high priority';
+  if (s.includes('needs support')) return 'needs attention';
+  if (s.includes('needs attention')) return 'needs attention';
   if (s.includes('excellent') || s.includes('great')) return 'excellent';
   if (s.includes('good') || s.includes('well')) return 'good';
   if (s.includes('average') || s.includes('ok') || s.includes('fair')) return 'average';
@@ -225,8 +231,24 @@ function getScreenerRole(screener?: string): string {
 
 function buildReportHtml(data: ScreeningReportData): string {
   const { childName, score, total, date, screener, domainBreakdown, domainAnswers } = data;
+  const screenerRole = getScreenerRole(screener);
   const category = getOverallCategory(score);
-  const percent = Math.min(100, Math.round((score / (total || 1)) * 100));
+
+  const resultLabel = data.result === 'Normal' ? 'No Signs of Autism' : data.result || 'Screening Result';
+  const resultPhrase = (() => {
+    if (data.result === 'Normal') return 'no significant';
+    const r = (data.result || '').toLowerCase();
+    if (r.includes('mild')) return 'mild';
+    if (r.includes('moderate')) return 'moderate';
+    if (r.includes('severe')) return 'severe';
+    return 'some';
+  })();
+
+  const pdfStatusBadge = (statusLabel: string) => {
+    const key = normalizeStatus(statusLabel);
+    const cfg = STATUS_CONFIG[key] || STATUS_CONFIG.average;
+    return `<span style='display:inline-block;padding:4px 10px;border-radius:12px;background:${cfg.bg};color:${cfg.text};border:1px solid ${cfg.border};font-size:11px;font-weight:600;'>${escapeHtml(statusLabel)}</span>`;
+  };
 
   const focusDomains: string[] = [];
   const strengthDomains: string[] = [];
@@ -235,145 +257,126 @@ function buildReportHtml(data: ScreeningReportData): string {
     const bd = domainBreakdown?.find((b: any) => b.key === key);
     const label = DOMAIN_LABELS[key];
     const scoreStr = bd ? `${bd.score} / ${bd.maxScore}` : '-';
-    const status = bd?.status ? normalizeStatus(bd.status) : deriveStatus(bd?.score || 0, bd?.maxScore || 1);
-    const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.average;
-    if (status === 'needs attention' || status === 'high priority') focusDomains.push(label);
-    if (status === 'excellent' || status === 'good') strengthDomains.push(label);
+    const statusLabel = bd?.status || 'Doing well';
+    const statusKey = normalizeStatus(statusLabel);
+    if (statusKey === 'needs attention' || statusKey === 'high priority') focusDomains.push(label);
+    if (statusKey === 'excellent' || statusKey === 'good') strengthDomains.push(label);
     return `<tr>
-      <td style="padding:8px 10px;border:1px solid #E2E4E8;">${escapeHtml(label)}</td>
-      <td style="padding:8px 10px;border:1px solid #E2E4E8;text-align:center;font-weight:600;">${escapeHtml(scoreStr)}</td>
-      <td style="padding:8px 10px;border:1px solid #E2E4E8;">${statusBadge(status)}</td>
+      <td style='padding:8px 10px;border:1px solid #E2E4E8;'>${escapeHtml(label)}</td>
+      <td style='padding:8px 10px;border:1px solid #E2E4E8;text-align:center;font-weight:600;'>${escapeHtml(scoreStr)}</td>
+      <td style='padding:8px 10px;border:1px solid #E2E4E8;'>${pdfStatusBadge(statusLabel)}</td>
     </tr>`;
   }).join('');
 
-  const focusText = focusDomains.length ? focusDomains.join(' and ') : 'some domains';
-  const strengthText = strengthDomains.length ? strengthDomains.join(' and ') : 'some domains';
-  const resultExplanation = `${escapeHtml(childName)} shows strengths in ${escapeHtml(strengthText)}. ${focusDomains.length ? `More support may be helpful in ${escapeHtml(focusText)}.` : 'All domains are currently within a comfortable range.'}`;
-
-  let domainDetails = '';
-  DOMAIN_ORDER.forEach((key, index) => {
+  const domainDetails = DOMAIN_ORDER.map((key, index) => {
     const bd = domainBreakdown?.find((b: any) => b.key === key);
     const label = DOMAIN_LABELS[key];
     const scoreStr = bd ? `${bd.score} / ${bd.maxScore}` : '-';
-    const status = bd?.status ? normalizeStatus(bd.status) : deriveStatus(bd?.score || 0, bd?.maxScore || 1);
-    const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.average;
+    const statusLabel = bd?.status || 'Doing well';
     const questions = DOMAIN_QUESTIONS[key] || [];
     const answers = domainAnswers[key] || [];
 
     const working: string[] = [];
     const attention: string[] = [];
     const missing: string[] = [];
-
     questions.forEach((q, i) => {
       const a = answers[i];
-      if (a === null || a === undefined) {
-        missing.push(q);
-      } else if (a >= 2) {
-        attention.push(q);
-      } else {
-        working.push(q);
-      }
+      if (a === null || a === undefined) missing.push(q);
+      else if (a < 2) working.push(q);
+      else if (a >= 3) attention.push(q);
     });
 
     const workingItems = working.length
-      ? working.map((q, i) => `<li style="margin:4px 0;"><span style="color:#1A7340;margin-right:6px;">&#10003;</span>${i + 1}. ${escapeHtml(q)}</li>`).join('')
-      : '<li style="margin:4px 0;color:#6B7180;">No items in this category.</li>';
+      ? working.map((q, i) => `<li style='margin:4px 0;'><span style='color:#1A7340;margin-right:6px;'>&#10003;</span>${i + 1}. ${escapeHtml(q)}</li>`).join('')
+      : '<li style=\'margin:4px 0;color:#6B7180;\'>No item in this category.</li>';
     const attentionItems = attention.length
-      ? attention.map((q, i) => `<li style="margin:4px 0;"><span style="color:#B71C1C;margin-right:6px;">&#8226;</span>${i + 1}. ${escapeHtml(q)}</li>`).join('')
-      : '<li style="margin:4px 0;color:#6B7180;">None at this time.</li>';
+      ? attention.map((q, i) => `<li style='margin:4px 0;'><span style='color:#B71C1C;margin-right:6px;'>&#9888;</span>${i + 1}. ${escapeHtml(q)}</li>`).join('')
+      : '<li style=\'margin:4px 0;color:#6B7180;\'>No major challenge was noted in this area at this time.</li>';
 
-    let missingNote = '';
-    if (missing.length) {
-      missingNote = `<p style="margin:8px 0;font-size:12px;color:#6B7180;">* Note: ${getScreenerRole(screener)} did not provide an answer for the following question${missing.length > 1 ? 's' : ''} — ${missing.map(escapeHtml).join('; ')}</p>`;
-    }
+    const missingNote = missing.length
+      ? `<p style='margin:8px 0;font-size:12px;color:#6B7180;'>* Note: ${escapeHtml(screenerRole)} did not provide an answer for the following question${missing.length > 1 ? 's' : ''} — ${missing.map(escapeHtml).join('; ')}</p>`
+      : '';
 
-    const activities = (DOMAIN_ACTIVITIES[key] || []).map((a, i) => `<li style="margin:4px 0;"><span style="color:${cfg.text};margin-right:6px;">&#8226;</span>${i + 1}. ${escapeHtml(a)}</li>`).join('');
-    const pageBreak = index < DOMAIN_ORDER.length - 1 ? '<div style="page-break-after:always;"></div>' : '';
+    const pageBreak = index < DOMAIN_ORDER.length - 1 ? `<div style='page-break-after:always;'></div>` : '';
 
-    domainDetails += `
-      <div style="margin-top:24px;padding:16px;border:1px solid #E2E4E8;border-radius:12px;background:#FAFAFA;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <h3 style="font-size:16px;color:#2D2A3A;margin:0;">${escapeHtml(label)}</h3>
-          <div>${statusBadge(status)}</div>
+    return `
+      <div style='margin-top:24px;padding:16px;border:1px solid #E2E4E8;border-radius:12px;background:#FAFAFA;'>
+        <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;'>
+          <h3 style='font-size:16px;color:#2D2A3A;margin:0;'>${escapeHtml(label)}</h3>
+          ${pdfStatusBadge(statusLabel)}
         </div>
-        <p style="margin:4px 0 12px;font-size:14px;"><strong>Score:</strong> ${escapeHtml(scoreStr)}</p>
-
-        <h4 style="font-size:14px;color:#1A7340;margin:12px 0 4px;">Strengths</h4>
-        <ul style="padding-left:20px;font-size:12px;margin:0;">${workingItems}</ul>
-
-        <h4 style="font-size:14px;color:#B71C1C;margin:12px 0 4px;">Areas Needing Attention</h4>
-        <ul style="padding-left:20px;font-size:12px;margin:0;">${attentionItems}</ul>
-
-        <h4 style="font-size:14px;color:${cfg.text};margin:12px 0 4px;">Recommendations</h4>
-        <p style="font-size:12px;margin:0;padding-left:12px;border-left:3px solid ${cfg.border};">${escapeHtml(cfg.recommendation)}</p>
-
-        <h4 style="font-size:14px;color:#535BD8;margin:12px 0 4px;">Suggested Activities</h4>
-        <ul style="padding-left:20px;font-size:12px;margin:0;">${activities}</ul>
+        <p style='margin:4px 0 12px;font-size:14px;'>Score: ${escapeHtml(scoreStr)}</p>
+        <h4 style='font-size:14px;color:#1A7340;margin:12px 0 4px;'>What's Working Well  (${working.length})</h4>
+        <ul style='padding-left:20px;font-size:12px;margin:0;'>${workingItems}</ul>
+        <h4 style='font-size:14px;color:#B71C1C;margin:12px 0 4px;'>Needs Attention  (${attention.length})</h4>
+        <ul style='padding-left:20px;font-size:12px;margin:0;'>${attentionItems}</ul>
         ${missingNote}
       </div>
       ${pageBreak}
     `;
-  });
+  }).join('');
+
+  const focusText = focusDomains.length ? focusDomains.join(' and ') : 'some domains';
+  const strengthText = strengthDomains.length ? strengthDomains.join(' and ') : 'some domains';
+  const resultExplanation = data.result === 'Normal'
+    ? `${escapeHtml(childName)} showed no significant autism-related signals in the screening. ${strengthDomains.length ? `Strengths were noted in ${escapeHtml(strengthText)}.` : ''} Continue regular developmental activities and routine monitoring.`
+    : `${escapeHtml(childName)} shows ${resultPhrase} signs mainly in the ${escapeHtml(focusText)} domains, while ${escapeHtml(childName)} responds well in the ${escapeHtml(strengthText)} domain. A detailed evaluation by a specialist and early intervention can help support ${escapeHtml(childName)}'s development.`;
+
+  const focusAreasLine = focusDomains.length
+    ? `<p style='font-size:12px;margin:4px 0;'><span style='color:#B71C1C;'>&#9888;</span> <strong>Focus Areas:</strong> ${escapeHtml(focusDomains.join('  •  '))}</p>`
+    : '';
 
   return `
     <html>
       <head>
-        <meta charset="utf-8" />
+        <meta charset='utf-8' />
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2D2A3A; margin: 32px; }
+          body { font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial, sans-serif; color: #2D2A3A; margin: 32px; }
           h1 { font-size: 22px; color: #2D2A3A; margin-bottom: 4px; }
           h2 { font-size: 16px; color: #535BD8; margin-top: 24px; margin-bottom: 12px; }
           p, li, td, th { font-size: 12px; line-height: 1.5; }
           table { width: 100%; border-collapse: collapse; margin-top: 8px; }
           th { background: #F3F2FF; color: #535BD8; text-align: left; padding: 8px 10px; border: 1px solid #E2E4E8; }
-          .page-break { page-break-after: always; height: 1px; }
         </style>
       </head>
       <body>
         <h1>${escapeHtml(childName)}'s Autism Screening Report</h1>
-        <p style="color:#6B7180;">Based on ISAA (Indian Scale for Assessment of Autism)</p>
-        <p style="margin-top:16px;"><strong>Date:</strong> ${escapeHtml(date || '')} &nbsp;|&nbsp; <strong>Screener:</strong> ${escapeHtml(screener || '')}</p>
+        <p style='color:#6B7180;'>Based on ISAA (Indian Scale for Assessment of Autism)</p>
+        <p style='margin-top:16px;'><strong>Date:</strong> ${escapeHtml(date || '')} &nbsp;|&nbsp; <strong>Screener:</strong> ${escapeHtml(screener || '')}</p>
 
-        <h2>Overall Screening Score</h2>
-        <p style="font-size:14px;margin:8px 0;"><strong>${score} / ${total}</strong></p>
-        <div style="width:100%;height:16px;background:#E2E4E8;border-radius:8px;overflow:hidden;margin:8px 0;">
-          <div style="width:${percent}%;height:100%;background:${category.color};"></div>
-        </div>
+        <h2>Screening Overview</h2>
+        <p style='font-size:14px;margin:8px 0;'><strong>Overall Score:  ${score} / ${total}</strong></p>
+        <p style='font-size:16px;color:${category.color};font-weight:700;'>${escapeHtml(resultLabel)}</p>
+        <p style='font-size:12px;color:#6B7180;'>* This score is only indicative, not a diagnosis. Please consult a specialist to confirm.</p>
 
-        <h2>Overall Result Category</h2>
-        <div style="padding:12px 16px;background:${category.lightBg};border-left:4px solid ${category.color};border-radius:8px;margin:12px 0;">
-          <p style="margin:0;font-size:16px;color:${category.color};font-weight:700;">${escapeHtml(category.label)}</p>
-          <p style="margin:6px 0 0;font-size:12px;color:#2D2A3A;">${escapeHtml(category.explanation)}</p>
-        </div>
-
-        <h2>Domain Summary</h2>
+        <h2>Overview of the 6 Domains</h2>
         <table>
           <thead>
-            <tr><th style="width:50%;">Domain</th><th style="text-align:center;">Score</th><th>Status</th></tr>
+            <tr><th style='width:50%;'>Domain</th><th style='text-align:center;'>Score</th><th>Status</th></tr>
           </thead>
           <tbody>${overviewRows}</tbody>
         </table>
 
-        <h2>Result Explanation</h2>
-        <p style="font-size:12px;margin:8px 0;">${resultExplanation}</p>
-        ${focusDomains.length ? `<p style="font-size:12px;margin:4px 0;"><strong>Focus Areas:</strong> ${escapeHtml(focusDomains.join(' • '))}</p>` : ''}
-        ${strengthDomains.length ? `<p style="font-size:12px;margin:4px 0;"><strong>Strengths:</strong> ${escapeHtml(strengthDomains.join(' • '))}</p>` : ''}
+        <h2>Screening Result</h2>
+        <p style='font-size:14px;margin:8px 0;'><strong>${escapeHtml(resultLabel)}   (${score} / ${total})</strong></p>
+        <p style='font-size:12px;margin:8px 0;'>${resultExplanation}</p>
+        ${focusAreasLine}
+        <p style='font-size:12px;margin:8px 0;'>For a detailed diagnosis, please consult a Developmental Pediatrician.</p>
 
-        <h2>Medical Disclaimer</h2>
-        <p style="font-size:12px;">This screening is not a diagnosis. It helps identify developmental signals and guide next steps. Please consult a child psychiatrist or developmental specialist to confirm.</p>
-
-        <div style="page-break-after:always;"></div>
+        <div style='padding:12px 16px;background:#FFF8E1;border-left:4px solid #FBBC04;border-radius:8px;margin:12px 0;'>
+          <h3 style='margin:0;font-size:14px;color:#B07D00;'><span style='margin-right:6px;'>&#9888;</span>A Screening is Not a Diagnosis</h3>
+          <p style='margin:6px 0 0;font-size:12px;color:#2D2A3A;'>Screening results are not a diagnosis. They help identify developmental signals and guide the next steps. Please consult a child psychiatrist or a developmental specialist to confirm.</p>
+        </div>
 
         <h2>Development by Domain</h2>
-        <p style="font-size:12px;color:#6B7180;">Each section shows what is working well, where more support may be needed, and recommended activities.</p>
+        <p style='font-size:12px;color:#6B7180;'>See below what is working well and where more attention is needed in each domain.</p>
+
+        <div style='page-break-after:always;'></div>
+
         ${domainDetails}
 
-        <h2>Overall Recommendations</h2>
-        <p style="font-size:12px;padding:12px;border-left:4px solid ${category.color};background:${category.lightBg};border-radius:0 8px 8px 0;">${escapeHtml(category.recommendation)}</p>
-
-        <p style="margin-top:32px;font-size:11px;color:#6B7180;">
-          This report has been prepared based on the scores given by ${escapeHtml(getScreenerRole(screener))} (from the ${total} ISAA questions).
-          The "Strengths" section lists items where the score is below 2, and the "Areas Needing Attention" section lists items where the score is 3 or higher.
+        <p style='margin-top:32px;font-size:11px;color:#6B7180;'>
+          This report has been prepared based on the scores given by ${escapeHtml(screenerRole)} (from the ${total} ISAA questions). The “What's Working Well” section lists items where the score is below 2 (i.e. 1), and the “Needs Attention” section lists items where the score is 3 or higher.
         </p>
       </body>
     </html>

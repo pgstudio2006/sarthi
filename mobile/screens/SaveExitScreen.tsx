@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import Logo from '../components/Logo';
 import BookmarksIcon from '../assets/figma/screen24/bookmarks.svg';
 import CloseIcon from '../assets/figma/screen24/close.svg';
@@ -21,6 +22,7 @@ const saveExitHero = require('../assets/figma/screen24/save_exit_hero.png');
 export default function SaveExitScreen() {
   const { scaleSize, padding, scaleFont } = useResponsive();
   const { top, bottom } = useSafeAreaInsets();
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
@@ -90,7 +92,7 @@ export default function SaveExitScreen() {
                 color: '#2D2A3A',
               }}
             >
-              We know{'\n'}parenting is busy!
+              {t('weKnowParentingIsBusy')}
             </Text>
             <Text
               style={{
@@ -102,7 +104,7 @@ export default function SaveExitScreen() {
                 maxWidth: scaleSize(310),
               }}
             >
-              Your progress has been saved.{"\n"}You can pick up right where you left off.
+              {t('progressSavedBody')}
             </Text>
           </View>
 
@@ -125,7 +127,7 @@ export default function SaveExitScreen() {
                     color: '#535BD8',
                   }}
                 >
-                  Progress saved
+                  {t('progressSavedTitle')}
                 </Text>
                 <Text
                   style={{
@@ -134,7 +136,7 @@ export default function SaveExitScreen() {
                     color: '#3B3B3E',
                   }}
                 >
-                  Section {sectionNumber} of 6 : {percent}% complete
+                  {t('sectionXOfYComplete', { section: String(sectionNumber), total: '6', percent: String(percent) })}
                 </Text>
               </View>
             </View>
@@ -173,7 +175,7 @@ export default function SaveExitScreen() {
                 color: colors.white,
               }}
             >
-              Continue where I left off
+              {t('continueScreening')}
             </Text>
           </Pressable>
 
@@ -200,7 +202,7 @@ export default function SaveExitScreen() {
                 color: '#6B7180',
               }}
             >
-              Finish later
+              {t('finishLater')}
             </Text>
           </Pressable>
         </View>

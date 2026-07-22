@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { colors } from '../theme/colors';
+import { useTranslation } from '../i18n';
 import Frame80Svg from '../assets/screen7/frame80.svg';
 import ChoiceGrid from '../components/ChoiceGrid';
 import PrimaryButton from '../components/PrimaryButton';
@@ -53,11 +54,12 @@ export default function CreateProfileScreen({
     initialDob = '',
     initialGender = '',
     initialBirthContext = '',
-    nextRoute = 'NextOnboarding',
+    nextRoute = 'Home',
   } = route?.params ?? {};
 
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
+  const { t, code } = useTranslation();
   const { signIn, user, token, setActiveChildId } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -69,8 +71,8 @@ export default function CreateProfileScreen({
   const [birthContext, setBirthContext] = useState<string | null>(initialBirthContext || null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const dobDisplay = formatISODateDisplay(dob);
-  const ageLabel = calculateAgeLabel(dob);
+  const dobDisplay = formatISODateDisplay(dob, code);
+  const ageLabel = calculateAgeLabel(dob, code);
 
   const isValid = childName.length > 0 && dob.length > 0 && gender !== null && birthContext !== null;
 
@@ -92,13 +94,9 @@ export default function CreateProfileScreen({
         signIn(token, { ...user, children: [...(user.children || []), result.data.child] });
         setActiveChildId(result.data.child.id);
       }
-      if (nextRoute === 'Home') {
-        navigation.goBack();
-      } else {
-        navigation.navigate(nextRoute);
-      }
+      navigation.navigate(nextRoute);
     } else {
-      setError(result.error || 'Failed to create child profile. Please try again.');
+      setError(result.error || t('failedCreateProfile'));
     }
   };
 
@@ -112,7 +110,7 @@ export default function CreateProfileScreen({
     <View style={styles.footer}>
       <View style={styles.buttonWrapper}>
         <PrimaryButton
-          label={submitting ? '' : 'Create Profile'}
+          label={submitting ? '' : t('createProfileBtn')}
           onPress={handleContinue}
           disabled={!isValid || submitting}
         />
@@ -129,19 +127,19 @@ export default function CreateProfileScreen({
     <ScreenLayout header={header} footer={footer}>
       <Pressable onPress={goBack} style={styles.backRow} hitSlop={10}>
         <ChevronLeftIcon width={14 * scale} height={14 * scale} />
-        <Text style={[styles.backText, { fontSize: 13 * scale }]}>Back</Text>
+        <Text style={[styles.backText, { fontSize: 13 * scale }]}>{t('back')}</Text>
       </Pressable>
 
       <View style={{ marginTop: 24 * scale, gap: 24 * scale }}>
         <Text style={[styles.heading, { fontSize: 26 * scale, lineHeight: 34 * scale }]}>
-          Let's get to know the child
+          {t('letsKnowChild')}
         </Text>
 
         <PrivacyInfoCard
           icon={<LockPersonIcon width={32 * scale} height={32 * scale} />}
           backgroundColor={colors.selectedBackground}
-          title="Your responses are saved securely"
-          subtitle="Your child's data is stored securely under DPDPA 2023."
+          title={t('responsesSavedSecurely')}
+          subtitle={t('childDataSecure')}
           titleColor={colors.primaryBlue}
           borderRadius={16}
         />
@@ -149,7 +147,7 @@ export default function CreateProfileScreen({
 
       <View style={{ marginTop: 24 * scale, gap: 24 * scale }}>
         <View style={{ gap: 12 * scale }}>
-          <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>Child's full name</Text>
+          <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>{t('childFullName')}</Text>
           <View style={[styles.inputShell, { borderRadius: 16 * scale, paddingHorizontal: 16 * scale, paddingVertical: 12 * scale }]}>
             <TextInput
               value={childName}
@@ -162,7 +160,7 @@ export default function CreateProfileScreen({
 
         <View style={{ gap: 12 * scale }}>
           <View style={styles.fieldHeaderRow}>
-            <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>Date of Birth</Text>
+            <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>{t('dateOfBirth')}</Text>
             <View style={[styles.ageBadge, { borderRadius: 8 * scale, paddingHorizontal: 12 * scale, paddingVertical: 9 * scale }]}>
               <Text style={[styles.ageBadgeText, { fontSize: 12 * scale }]}>{ageLabel}</Text>
             </View>
@@ -182,13 +180,13 @@ export default function CreateProfileScreen({
         </View>
 
         <View style={{ gap: 12 * scale }}>
-          <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>Gender</Text>
-          <ChoiceGrid options={GENDERS} selected={gender} onSelect={(sel) => { setGender(sel); setError(''); }} columns={3} />
+          <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>{t('gender')}</Text>
+          <ChoiceGrid options={GENDERS} selected={gender} onSelect={(sel) => { setGender(sel); setError(''); }} columns={3} getLabel={(g) => t(g === 'Male' ? 'male' : g === 'Female' ? 'female' : 'preferNotToSay')} />
         </View>
 
         <View style={{ gap: 12 * scale }}>
-          <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>Birth context</Text>
-          <ChoiceGrid options={BIRTH_CONTEXT} selected={birthContext} onSelect={(sel) => { setBirthContext(sel); setError(''); }} columns={2} />
+          <Text style={[styles.fieldLabel, { fontSize: 12 * scale }]}>{t('birthContext')}</Text>
+          <ChoiceGrid options={BIRTH_CONTEXT} selected={birthContext} onSelect={(sel) => { setBirthContext(sel); setError(''); }} columns={2} getLabel={(b) => t(b === 'Normal Birth' ? 'normalBirth' : 'prematureBirth')} />
         </View>
       </View>
 

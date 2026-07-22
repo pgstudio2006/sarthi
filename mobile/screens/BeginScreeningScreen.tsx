@@ -14,6 +14,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import PrivacyInfoCard from '../components/PrivacyInfoCard';
 import { useAuth } from '../context/AuthContext';
 import { useScreening } from '../context/ScreeningContext';
+import { useTranslation } from '../i18n';
 import ChildIcon from '../assets/figma/screen17/Frame-18.svg';
 import LockIcon from '../assets/figma/screen17/Frame.svg';
 import PauseIcon from '../assets/figma/screen17/Frame-9.svg';
@@ -22,42 +23,32 @@ import CloseIcon from '../assets/figma/screen17/Frame-40.svg';
 
 const FIGMA_WIDTH = 390;
 
-const EXPECTATIONS = [
-  {
-    title: "About Nitya's day to day life",
-    subtitle: 'What you already observe',
-    Icon: ChildIcon,
-  },
-  {
-    title: 'Private & secure',
-    subtitle: "Your responses are encrypted and protected in line with India's DPDPA.",
-    Icon: LockIcon,
-  },
-  {
-    title: 'Pause anytime',
-    subtitle: 'Come back whenever you want',
-    Icon: PauseIcon,
-  },
+const EXPECTATION_KEYS = [
+  { titleKey: 'aboutDayToDayLife', subtitleKey: 'whatYouAlreadyObserve', Icon: ChildIcon },
+  { titleKey: 'privateSecure', subtitleKey: 'responsesEncryptedDpdpa', Icon: LockIcon },
+  { titleKey: 'pauseAnytime', subtitleKey: 'comeBackWhenever', Icon: PauseIcon },
 ];
 
 export default function BeginScreeningScreen({ navigation }: { navigation: any }) {
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
   const { user, activeChild } = useAuth();
+  const { t } = useTranslation();
   const screening = useScreening();
+  const childName = activeChild?.name || user?.children?.[0]?.name || t('yourChild');
 
   const childId = activeChild?.id || user?.children?.[0]?.id;
 
   const handleStart = async () => {
     if (!childId) {
-      Alert.alert('No child profile', 'Please create a child profile before starting screening.');
+      Alert.alert(t('noChildProfile'), t('createChildProfileFirst'));
       return;
     }
     const sessionId = await screening.start(childId);
     if (sessionId) {
       navigation.navigate('SocialScreening');
     } else {
-      Alert.alert('Could not start screening', screening.error || 'Please check your connection and try again.');
+      Alert.alert(t('couldNotStartScreening'), screening.error || t('checkConnectionTryAgain'));
     }
   };
 
@@ -70,8 +61,8 @@ export default function BeginScreeningScreen({ navigation }: { navigation: any }
 
           <View style={styles.sheetHeader}>
             <View>
-              <Text style={[styles.kicker, { fontSize: 13 * scale }]}>Before you start screening</Text>
-              <Text style={[styles.title, { fontSize: 30 * scale, lineHeight: 35 * scale }]}>Here's what to expect</Text>
+              <Text style={[styles.kicker, { fontSize: 13 * scale }]}>{t('beforeStart')}</Text>
+              <Text style={[styles.title, { fontSize: 30 * scale, lineHeight: 35 * scale }]}>{t('heresWhatToExpect')}</Text>
             </View>
             <Pressable onPress={() => navigation.goBack()} style={[styles.closeButton, { width: 32 * scale, height: 32 * scale, borderRadius: 16 * scale }]} hitSlop={10}>
               <CloseIcon width={16 * scale} height={16 * scale} />
@@ -80,14 +71,14 @@ export default function BeginScreeningScreen({ navigation }: { navigation: any }
 
           <ScrollView contentContainerStyle={{ paddingBottom: 10 * scale }} showsVerticalScrollIndicator={false}>
             <View style={{ gap: 12 * scale, marginTop: 22 * scale }}>
-              {EXPECTATIONS.map((item) => {
+              {EXPECTATION_KEYS.map((item) => {
                 const Icon = item.Icon;
                 return (
-                  <View key={item.title} style={styles.expectationCard}>
+                  <View key={item.titleKey} style={styles.expectationCard}>
                     <Icon width={48 * scale} height={48 * scale} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.expectationTitle}>{item.title}</Text>
-                      <Text style={styles.expectationSubtitle}>{item.subtitle}</Text>
+                      <Text style={styles.expectationTitle}>{t(item.titleKey, { name: childName })}</Text>
+                      <Text style={styles.expectationSubtitle}>{t(item.subtitleKey)}</Text>
                     </View>
                   </View>
                 );
@@ -98,9 +89,9 @@ export default function BeginScreeningScreen({ navigation }: { navigation: any }
               <PrivacyInfoCard
                 icon={<WarningIcon width={28 * scale} height={28 * scale} />}
                 backgroundColor="rgba(243, 242, 255, 0.6)"
-                title="A screening is not a diagnosis."
-                subtitle="Screening results are not a diagnosis. They help identify developmental signals and guide your next steps."
-                titleColor="#535BD8"
+                title={t('screeningNotDiagnosis')}
+                subtitle={t('screeningNotDiagnosisBody')}
+                titleColor={colors.mainBlack}
               />
             </View>
 
@@ -108,7 +99,7 @@ export default function BeginScreeningScreen({ navigation }: { navigation: any }
               {screening.error ? (
                 <Text style={[styles.errorText, { fontSize: 12 * scale, marginBottom: 12 * scale }]}>{screening.error}</Text>
               ) : null}
-              <PrimaryButton label="Start Screening" onPress={handleStart} disabled={screening.loading} />
+              <PrimaryButton label={t('startScreening')} onPress={handleStart} disabled={screening.loading} />
             </View>
           </ScrollView>
         </View>

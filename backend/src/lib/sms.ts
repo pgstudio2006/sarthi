@@ -40,6 +40,11 @@ export async function sendOtp(phone: string, code: string): Promise<SendSmsResul
 
   const url = new URL(`https://control.msg91.com/api/v5/otp?${params.toString()}`);
 
+  console.log('[MSG91] SendOTP URL:', url.toString());
+  console.log('[MSG91] AuthKey:', authkey ? 'set' : 'missing');
+  console.log('[MSG91] Template ID:', templateId);
+  console.log('[MSG91] Mobile:', mobile);
+
   return new Promise((resolve) => {
     const req = https.request(
       url,
@@ -57,6 +62,8 @@ export async function sendOtp(phone: string, code: string): Promise<SendSmsResul
           data += chunk;
         });
         res.on('end', () => {
+          console.log('[MSG91] SendOTP response status:', res.statusCode);
+          console.log('[MSG91] SendOTP response body:', data);
           try {
             const json = data ? JSON.parse(data) : {};
             if (json.type === 'success' || json.type === 'Success' || res.statusCode === 200) {

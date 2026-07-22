@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useResponsive } from '../utils/responsive';
 import { colors } from '../theme/colors';
+import { useTranslation } from '../i18n';
 import StarIcon from '../assets/figma/screen16/Frame-10.svg';
 import ListIcon from '../assets/figma/screen16/Frame-9.svg';
 import ClockIcon from '../assets/figma/screen16/Frame-30.svg';
@@ -23,8 +24,10 @@ interface HeroCardProps {
   style?: ViewStyle;
 }
 
-export default function HeroCard({ onPress, onContinue, onStartNew, childName = 'Nitya', progress, style }: HeroCardProps) {
+export default function HeroCard({ onPress, onContinue, onStartNew, childName, progress, style }: HeroCardProps) {
   const { scaleSize } = useResponsive();
+  const { t } = useTranslation();
+  const displayName = childName || t('yourChild');
   const progressPercent = progress ? (progress.totalAnswered / progress.totalQuestions) * 100 : 0;
 
   return (
@@ -84,10 +87,10 @@ export default function HeroCard({ onPress, onContinue, onStartNew, childName = 
             <View style={styles.progressTop}>
               <View style={styles.progressTextGroup}>
                 <Text style={[styles.title, { fontSize: scaleSize(24), lineHeight: scaleSize(30) }]}>
-                  Complete your screening
+                  {t('startScreening')}
                 </Text>
                 <Text style={[styles.subtitle, { fontSize: scaleSize(14), lineHeight: scaleSize(18), marginTop: scaleSize(12) }]}>
-                  Finish the remaining {progress.remainingSections} sections to view report.
+                  {t('sectionsRemaining', { count: String(progress.remainingSections) })}
                 </Text>
               </View>
 
@@ -105,10 +108,10 @@ export default function HeroCard({ onPress, onContinue, onStartNew, childName = 
 
               <View style={[styles.metaRow, { marginTop: scaleSize(10), gap: scaleSize(12) }]}>
                 <Text style={[styles.metaText, { fontSize: scaleSize(12), fontFamily: 'Inter_400Regular' }]}>
-                  Question {progress.totalAnswered} of {progress.totalQuestions}
+                  {t('questionsLabel')} {progress.totalAnswered} / {progress.totalQuestions}
                 </Text>
                 <Text style={[styles.minsLeft, { fontSize: scaleSize(12) }]}>
-                  ~ {progress.minutesLeft} mins left
+                  ~ {progress.minutesLeft} {t('minsLeft')}
                 </Text>
               </View>
             </View>
@@ -125,7 +128,7 @@ export default function HeroCard({ onPress, onContinue, onStartNew, childName = 
                   },
                 ]}
               >
-                <Text style={[styles.ctaText, { fontSize: scaleSize(16) }]}>Continue Where I Left Off</Text>
+                <Text style={[styles.ctaText, { fontSize: scaleSize(16) }]}>{t('continueScreening')}</Text>
                 <Text style={[styles.ctaArrow, { fontSize: scaleSize(20) }]}>→</Text>
               </Pressable>
               <Pressable
@@ -139,7 +142,7 @@ export default function HeroCard({ onPress, onContinue, onStartNew, childName = 
                   },
                 ]}
               >
-                <Text style={[styles.ctaOutlineText, { fontSize: scaleSize(16) }]}>Start New Screening</Text>
+                <Text style={[styles.ctaOutlineText, { fontSize: scaleSize(16) }]}>{t('startNewScreening')}</Text>
               </Pressable>
             </View>
           </View>
@@ -148,25 +151,25 @@ export default function HeroCard({ onPress, onContinue, onStartNew, childName = 
             <View style={styles.startTop}>
               <View style={[styles.badge, { paddingHorizontal: scaleSize(12), paddingVertical: scaleSize(6), borderRadius: scaleSize(16), gap: scaleSize(8) }]}>
                 <StarIcon width={scaleSize(20)} height={scaleSize(20)} />
-                <Text style={[styles.badgeText, { fontSize: scaleSize(12) }]}>YOUR FIRST STEP</Text>
+                <Text style={[styles.badgeText, { fontSize: scaleSize(12) }]}>{t('yourFirstStep')}</Text>
               </View>
 
               <Text style={[styles.title, { fontSize: scaleSize(28), lineHeight: scaleSize(34), marginTop: scaleSize(18) }]}>
-                Begin {childName}&apos;s Screening
+                {t('beginScreening', { name: displayName })}
               </Text>
 
               <Text style={[styles.subtitle, { fontSize: scaleSize(14), lineHeight: scaleSize(20), marginTop: scaleSize(12) }]}>
-                Understand {childName}&apos;s autism-related strengths and needs.
+                {t('understandChild', { name: displayName })}
               </Text>
 
               <View style={[styles.metaRow, { marginTop: scaleSize(14), gap: scaleSize(25) }]}>
                 <View style={[styles.metaItem, { gap: scaleSize(6) }]}>
                   <ListIcon width={scaleSize(16)} height={scaleSize(16)} />
-                  <Text style={[styles.metaText, { fontSize: scaleSize(12) }]}>40 questions</Text>
+                  <Text style={[styles.metaText, { fontSize: scaleSize(12) }]}>40 {t('questions')}</Text>
                 </View>
                 <View style={[styles.metaItem, { gap: scaleSize(6) }]}>
                   <ClockIcon width={scaleSize(16)} height={scaleSize(16)} />
-                  <Text style={[styles.metaText, { fontSize: scaleSize(12) }]}>15 mins</Text>
+                  <Text style={[styles.metaText, { fontSize: scaleSize(12) }]}>15 {t('mins')}</Text>
                 </View>
               </View>
             </View>
@@ -183,7 +186,7 @@ export default function HeroCard({ onPress, onContinue, onStartNew, childName = 
                 },
               ]}
             >
-              <Text style={[styles.ctaText, { fontSize: scaleSize(16) }]}>Start Screening for free</Text>
+              <Text style={[styles.ctaText, { fontSize: scaleSize(16) }]}>{t('startScreeningFree')}</Text>
             </Pressable>
           </View>
         )}

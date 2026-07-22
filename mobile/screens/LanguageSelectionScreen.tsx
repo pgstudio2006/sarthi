@@ -7,8 +7,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
+import { useLanguage } from '../context/LanguageContext';
+import { useTranslation } from '../i18n';
 import LanguageCard from '../components/LanguageCard';
 import PrimaryButton from '../components/PrimaryButton';
 import StarSvg from '../assets/screen2/star.svg';
@@ -23,18 +24,21 @@ const LANGUAGES = [
 ];
 
 export default function LanguageSelectionScreen({ navigation }: { navigation: any }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
+  const { setLanguage } = useLanguage();
   const [selectedId, setSelectedId] = useState('en');
 
-  const handleContinue = async () => {
-    try {
-      await AsyncStorage.setItem('selectedLanguage', selectedId);
-      navigation.navigate('AutismScreening');
-    } catch (e) {
-      // Ignore storage errors and still navigate
-      navigation.navigate('AutismScreening');
-    }
+  const handleContinue = () => {
+    const languageMap: Record<string, 'English' | 'Gujarati' | 'Hindi' | 'Kannada'> = {
+      en: 'English',
+      hi: 'Hindi',
+      kn: 'Kannada',
+      gu: 'Gujarati',
+    };
+    setLanguage(languageMap[selectedId]);
+    navigation.navigate('AutismScreening');
   };
 
   return (
@@ -52,10 +56,10 @@ export default function LanguageSelectionScreen({ navigation }: { navigation: an
         >
           <View style={[styles.header, { gap: 16 * scale }]}>
             <Text style={[styles.heading, { fontSize: 32 * scale }]}>
-              Choose your{'\n'}language
+              {t('selectLanguage')}
             </Text>
             <Text style={[styles.subtitle, { fontSize: 14 * scale, lineHeight: 18 * scale }]}>
-              You can change this anytime from settings.
+              {t('languageChangeNote')}
             </Text>
           </View>
 
@@ -74,14 +78,14 @@ export default function LanguageSelectionScreen({ navigation }: { navigation: an
           <View style={[styles.infoRow, { gap: 4 * scale, marginTop: 24 * scale }]}>
             <StarSvg width={16.67 * scale} height={15.85 * scale} />
             <Text style={[styles.infoText, { fontSize: 12 * scale }]}>
-              More languages coming soon !
+              {t('moreLanguagesComingSoon')}
             </Text>
           </View>
         </ScrollView>
       </View>
 
       <View style={[styles.buttonWrapper, { paddingHorizontal: 24 * scale, paddingBottom: 24 * scale, paddingTop: 16 * scale }]}>
-        <PrimaryButton label="Continue" onPress={handleContinue} />
+        <PrimaryButton label={t('continue')} onPress={handleContinue} />
       </View>
     </SafeAreaView>
   );

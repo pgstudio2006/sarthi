@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
+import { useTranslation } from '../i18n';
 import TopHeader from '../components/TopHeader';
 import HeroIllustration from '../components/HeroIllustration';
 import PaginationIndicator from '../components/PaginationIndicator';
@@ -17,6 +18,7 @@ import PrimaryButton from '../components/PrimaryButton';
 const FIGMA_WIDTH = 390;
 
 export default function AutismScreeningScreen({ navigation }: { navigation: any }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
 
@@ -47,11 +49,11 @@ export default function AutismScreeningScreen({ navigation }: { navigation: any 
         ]}
       >
         <Text style={[styles.heading, { fontSize: 26 * scale, lineHeight: 34 * scale }]}>
-          Free Autism Screening
+          {t('freeAutismScreening')}
         </Text>
 
         <Text style={[styles.body, { fontSize: 14 * scale, lineHeight: 20 * scale, marginTop: 12 * scale }]}>
-          Complete a trusted autism screening from home in just 10–15 minutes. It helps you understand whether your child may benefit from a professional evaluation.
+          {t('freeAutismScreeningBody')}
         </Text>
 
         <View style={[styles.paginationWrapper, { marginTop: 24 * scale }]}>
@@ -60,7 +62,7 @@ export default function AutismScreeningScreen({ navigation }: { navigation: any 
       </ScrollView>
 
       <View style={[styles.buttonWrapper, { paddingHorizontal: 20 * scale, paddingBottom: 24 * scale }]}>
-        <PrimaryButton label="Next" onPress={handleNext} />
+        <PrimaryButton label={t('next')} onPress={handleNext} />
       </View>
     </SafeAreaView>
   );

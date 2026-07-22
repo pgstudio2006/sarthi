@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pressable, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { colors } from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const FIGMA_WIDTH = 390;
 const DEFAULT_SECONDS = 28;
@@ -10,6 +11,7 @@ export default function CountdownTimer({
 }: {
   onResend?: () => void;
 }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
   const [seconds, setSeconds] = useState(DEFAULT_SECONDS);
@@ -38,7 +40,7 @@ export default function CountdownTimer({
   if (!active) {
     return (
       <Pressable onPress={handleResend}>
-        <Text style={[styles.text, { fontSize: 12 * scale, color: colors.primaryBlue }]}>Resend Code</Text>
+        <Text style={[styles.text, { fontSize: 12 * scale, color: colors.primaryBlue }]}>{t('resendCode')}</Text>
       </Pressable>
     );
   }
@@ -47,7 +49,7 @@ export default function CountdownTimer({
 
   return (
     <Text style={[styles.text, { fontSize: 12 * scale }]}>
-      Resend in {formatted}
+      {t('resendIn', { time: formatted })}
     </Text>
   );
 }

@@ -11,11 +11,9 @@ declare global {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
-
+  console.log('[AUTH]', req.method, req.path, 'header:', authHeader);
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    // AUTH BYPASS: create a mock user for now
-    req.user = { userId: 'dev-user', phone: '9999999999' };
-    next();
+    res.status(401).json({ error: 'Missing or invalid token' });
     return;
   }
 
@@ -23,9 +21,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   try {
     req.user = verifyToken(token);
     next();
-  } catch {
-    // AUTH BYPASS: even with invalid token, let it through
-    req.user = { userId: 'dev-user', phone: '9999999999' };
-    next();
+  } catch (err) {
+    console.log('[AUTH] verify failed:', (err as Error).message);
+    res.status(401).json({ error: 'Invalid or expired token' });
   }
 }

@@ -8,9 +8,10 @@ import profileRoutes from './routes/profile';
 import userRoutes from './routes/users';
 import screeningRoutes from './routes/screening';
 import aiRoutes from './routes/ai';
+import locationRoutes from './routes/locations';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -24,7 +25,8 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/screening', screeningRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/locations', locationRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Sarthi backend running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Sarthi backend running on http://0.0.0.0:${PORT}`);
 });

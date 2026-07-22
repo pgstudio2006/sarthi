@@ -8,11 +8,13 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
+import { useTranslation } from '../i18n';
 import Logo from '../components/Logo';
 
 const FIGMA_WIDTH = 390;
 
 export default function SplashScreen({ navigation }: { navigation: any }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
   const [targetScreen, setTargetScreen] = useState<string | null>(null);
@@ -23,11 +25,14 @@ export default function SplashScreen({ navigation }: { navigation: any }) {
       try {
         const storedToken = await AsyncStorage.getItem('token');
         const onboardingValue = await AsyncStorage.getItem('onboardingCompleted');
+        const selectedLanguage = await AsyncStorage.getItem('selectedLanguage');
         let next = 'LanguageSelection';
         if (storedToken) {
           next = 'Home';
         } else if (onboardingValue === 'true') {
           next = 'PhoneAuth';
+        } else if (selectedLanguage) {
+          next = 'AutismScreening';
         }
         if (active) {
           setTargetScreen(next);
@@ -99,7 +104,7 @@ export default function SplashScreen({ navigation }: { navigation: any }) {
         <View style={[styles.textGroup, { gap: 4 * scale }]}>
           <Text style={[styles.title, { fontSize: 36 * scale, letterSpacing: 0.7 * scale }]} allowFontScaling={false}>SAARATHI</Text>
           <Text style={[styles.tagline, { fontSize: 14 * scale, lineHeight: 18 * scale }]} allowFontScaling={false}>
-            Your AI Enabled Child{'\n'}Development Guide
+            {t('tagline')}
           </Text>
         </View>
       </View>

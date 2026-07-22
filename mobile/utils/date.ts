@@ -1,3 +1,5 @@
+import { dateLocales } from '../i18n/dateLocales';
+
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -10,14 +12,15 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-export function formatDisplayDate(date: Date): string {
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+export function formatDisplayDate(date: Date, lang?: string): string {
+  const locale = dateLocales[lang ?? 'en'] ?? dateLocales.en;
+  return `${date.getDate()} ${locale.shortMonthNames[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-export function formatISODateDisplay(iso: string): string {
+export function formatISODateDisplay(iso: string, lang?: string): string {
   const date = parseISODate(iso);
   if (!date) return iso;
-  return formatDisplayDate(date);
+  return formatDisplayDate(date, lang);
 }
 
 export function parseISODate(iso: string): Date | undefined {
@@ -50,9 +53,10 @@ export function parseDateInput(input: string): Date | undefined {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
-export function calculateAgeLabel(dobIso: string): string {
+export function calculateAgeLabel(dobIso: string, lang?: string): string {
   const date = parseISODate(dobIso);
-  if (!date) return 'Age';
+  const locale = dateLocales[lang ?? 'en'] ?? dateLocales.en;
+  if (!date) return locale.age;
 
   const now = new Date();
   let years = now.getFullYear() - date.getFullYear();
@@ -66,7 +70,7 @@ export function calculateAgeLabel(dobIso: string): string {
     months += 12;
   }
 
-  return `${years} yrs ${months} mos`;
+  return `${years} ${locale.years} ${months} ${locale.months}`;
 }
 
 export function calculateAgeInMonths(dobIso: string): number {

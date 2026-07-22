@@ -238,45 +238,87 @@ const CASE_4_FAQS: FAQItem[] = [
   },
 ];
 
+function normalizeDomainKey(key: string): string {
+  if (key === 'Emotional') return 'Emotion';
+  if (key === 'Behaviour') return 'Behavior';
+  return key;
+}
+
+function getDomainFAQItems(keys: string[], maxPerDomain: number = 2): FAQItem[] {
+  const seen = new Set<string>();
+  const out: FAQItem[] = [];
+  keys.forEach((raw) => {
+    const key = normalizeDomainKey(raw);
+    const faqs = DOMAIN_FAQS[key];
+    if (!faqs) return;
+    for (let i = 0; i < Math.min(maxPerDomain, faqs.length); i++) {
+      const f = faqs[i];
+      if (seen.has(f.title)) continue;
+      seen.add(f.title);
+      out.push(f);
+    }
+  });
+  return out;
+}
+
+function getStageFAQsByProgress(progressPercent: number): FAQItem[] {
+  // Prioritize stage questions relevant to the current progress band,
+  // then append the rest so the pool always has 10 questions.
+  let primary: FAQItem[] = [];
+  if (progressPercent < 25) {
+    primary = CASE_2_FAQS.slice(0, 4);
+  } else if (progressPercent < 50) {
+    primary = CASE_2_FAQS.slice(0, 6);
+  } else if (progressPercent < 75) {
+    primary = [...CASE_2_FAQS.slice(4, 8), ...CASE_2_FAQS.slice(2, 4)];
+  } else {
+    primary = CASE_2_FAQS.slice(6, 10);
+  }
+  const rest = CASE_2_FAQS.filter((item) => !primary.includes(item));
+  return [...primary, ...rest];
+}
+
+function dedupeFAQs(items: FAQItem[]): FAQItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.title)) return false;
+    seen.add(item.title);
+    return true;
+  });
+}
+
 export function getDynamicFAQs(
   completedCount: number,
   isInProgress: boolean,
-  priorityDomains: string[] = []
+  priorityDomains: string[] = [],
+  progressPercent: number = 0,
+  completedDomains: string[] = []
 ): FAQItem[] {
   // Case 2: Partial Screening
   if (isInProgress) {
-    return CASE_2_FAQS;
+    const domainPart = getDomainFAQItems(completedDomains, 2).slice(0, 4);
+    const stagePart = getStageFAQsByProgress(progressPercent).filter(
+      (item) => !domainPart.some((d) => d.title === item.title)
+    );
+    return dedupeFAQs([...domainPart, ...stagePart]).slice(0, 10);
   }
 
   // Case 4: Repeat Completed Screenings
   if (completedCount > 1) {
-    return CASE_4_FAQS;
+    const domainPart = getDomainFAQItems(priorityDomains, 2).slice(0, 4);
+    const stagePart = CASE_4_FAQS.filter(
+      (item) => !domainPart.some((d) => d.title === item.title)
+    );
+    return dedupeFAQs([...domainPart, ...stagePart]).slice(0, 10);
   }
 
   // Case 3: First Screening Completed
   if (completedCount === 1) {
-    // Personalize by prioritizing domain-specific FAQs for domains needing support
-    const personalized: FAQItem[] = [];
-    
-    // Add domain-specific FAQs first for priority domains
-    priorityDomains.forEach((domainKey) => {
-      // Map domainKey mapping if different (e.g. Emotional vs Emotion, Behaviour vs Behavior)
-      let key = domainKey;
-      if (key === 'Emotional') key = 'Emotion';
-      if (key === 'Behaviour') key = 'Behavior';
-
-      const faqs = DOMAIN_FAQS[key];
-      if (faqs) {
-        personalized.push(...faqs);
-      }
-    });
-
-    // Fill rest with standard Case 3 FAQs until we reach 10
-    const remaining = CASE_3_FAQS.filter(
-      (item) => !personalized.some((p) => p.title === item.title)
+    const domainPart = getDomainFAQItems(priorityDomains, 2);
+    const stagePart = CASE_3_FAQS.filter(
+      (item) => !domainPart.some((d) => d.title === item.title)
     );
-    
-    return [...personalized, ...remaining].slice(0, 10);
+    return dedupeFAQs([...domainPart, ...stagePart]).slice(0, 10);
   }
 
   // Case 1: New Users - No screening completed

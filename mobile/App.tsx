@@ -43,10 +43,6 @@ import ModerateAutismCompletionScreen from './screens/ModerateAutismCompletionSc
 import ModerateAutismReportScreen from './screens/ModerateAutismReportScreen';
 import SevereAutismCompletionScreen from './screens/SevereAutismCompletionScreen';
 import SevereAutismReportScreen from './screens/SevereAutismReportScreen';
-import WelcomeScreen from './screens/WelcomeScreen';
-import NextOnboardingScreen from './screens/NextOnboardingScreen';
-import DoctorProfileScreen from './screens/DoctorProfileScreen';
-import OtherProfileScreen from './screens/OtherProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -76,7 +72,7 @@ export default function App() {
     return null;
   }
 
-  const initialRoute = 'Home';
+  const initialRoute = 'Splash';
 
   return (
     <SafeAreaProvider>
@@ -113,10 +109,6 @@ export default function App() {
           <Stack.Screen name="CognitiveScreening" component={CognitiveScreeningScreen} />
           <Stack.Screen name="SaveExit" component={SaveExitScreen} options={{ presentation: 'fullScreenModal' }} />
           <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="NextOnboarding" component={NextOnboardingScreen} />
-          <Stack.Screen name="DoctorProfile" component={DoctorProfileScreen} />
-          <Stack.Screen name="OtherProfile" component={OtherProfileScreen} />
           <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
           <Stack.Screen name="EditChildProfile" component={EditChildProfileScreen} />
           <Stack.Screen name="ScreeningCompletion" component={ScreeningCompletionScreen} />

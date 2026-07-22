@@ -16,6 +16,7 @@ type ScreeningContextType = {
   domainAnswers: DomainAnswers;
   score: ScreeningScore | null;
   previousScore: ScreeningScore | null;
+  lastSubmittedAt: number | null;
   loading: boolean;
   error: string | null;
   start: (childId: string) => Promise<string | null>;
@@ -35,6 +36,7 @@ export function ScreeningProvider({ children }: { children: ReactNode }) {
   const [domainAnswers, setDomainAnswersState] = useState<DomainAnswers>({});
   const [score, setScore] = useState<ScreeningScore | null>(null);
   const [previousScore, setPreviousScore] = useState<ScreeningScore | null>(null);
+  const [lastSubmittedAt, setLastSubmittedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +114,7 @@ export function ScreeningProvider({ children }: { children: ReactNode }) {
     setLoading(false);
     if (result.success) {
       setScore(result.data.score);
+      setLastSubmittedAt(Date.now());
       return result.data.score;
     }
     setError(result.error);
@@ -124,6 +127,7 @@ export function ScreeningProvider({ children }: { children: ReactNode }) {
     setDomainAnswersState({});
     setScore(null);
     setPreviousScore(null);
+    setLastSubmittedAt(null);
     setError(null);
     setLoading(false);
   }, []);
@@ -136,6 +140,7 @@ export function ScreeningProvider({ children }: { children: ReactNode }) {
         domainAnswers,
         score,
         previousScore,
+        lastSubmittedAt,
         loading,
         error,
         start,

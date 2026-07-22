@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import { useScreening } from '../context/ScreeningContext';
 import ProgressRing from '../components/ProgressRing';
 import LogoIcon from '../assets/logo.svg';
@@ -43,6 +44,7 @@ const DOMAIN_KEYS = ['Social', 'Emotion', 'Speech', 'Behavior', 'Sensory', 'Cogn
 
 export default function SevereAutismCompletionScreen({ navigation, route }: any) {
   const { scaleSize, padding } = useResponsive();
+  const { t } = useTranslation();
   const screening = useScreening();
 
   const childName = route?.params?.childName ?? 'Nitya';
@@ -55,6 +57,26 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
   const isRepeat = route?.params?.isRepeat ?? false;
   const previousScore = route?.params?.previousScore ?? null;
   const progress = Math.min(1, Math.max(0, score / total));
+
+  const resultLower = result.toLowerCase();
+  const resultLabelKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'resultNormal'
+    : resultLower.includes('mild')
+    ? 'resultMildAutism'
+    : resultLower.includes('moderate')
+    ? 'resultModerateAutism'
+    : resultLower.includes('severe')
+    ? 'resultSevereAutism'
+    : 'resultNormal';
+  const resultDescKey = resultLower.includes('no sign') || resultLower === 'normal'
+    ? 'noSignsResultDescription'
+    : resultLower.includes('mild')
+    ? 'mildResultDescription'
+    : resultLower.includes('moderate')
+    ? 'moderateResultDescription'
+    : resultLower.includes('severe')
+    ? 'severeResultDescription'
+    : 'mildResultDescription';
 
   const severityColor = '#A83B3B';
   const severityBg = '#FDF0F0';
@@ -91,12 +113,13 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
 
   const domainsWithProgress = DOMAIN_KEYS.map((key) => {
     const meta = DOMAIN_META[key];
+    const breakdown = domainBreakdown?.find((item: any) => item.key === key);
     return {
       key,
       label: meta.label,
       Icon: meta.Icon,
       color: meta.color,
-      ringColor: meta.ringColor,
+      ringColor: breakdown?.statusColor ?? meta.ringColor,
     };
   });
 
@@ -135,32 +158,32 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
           <View style={[styles.starCircle, { width: scaleSize(120), height: scaleSize(120), borderRadius: scaleSize(60) }]}>
             <FamilyStarIcon width={scaleSize(64)} height={scaleSize(64)} />
           </View>
-          <Text style={[styles.youDidIt, { fontSize: scaleSize(32), marginTop: scaleSize(12) }]}>You did it!</Text>
+          <Text style={[styles.youDidIt, { fontSize: scaleSize(32), marginTop: scaleSize(12) }]}>{t('youDidIt')}</Text>
           <Text style={[styles.celebrationSub, { fontSize: scaleSize(14) }]}>
-            {childName}'s screening is complete.
+            {t('screeningCompleteForName', { name: childName })}
           </Text>
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: scaleSize(0), backgroundColor: '#fff', borderRadius: scaleSize(16), borderWidth: 1, borderColor: '#E2E4E8', paddingVertical: scaleSize(16) }}>
           <View style={{ alignItems: 'center', width: scaleSize(112) }}>
             <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>40</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>Questions</Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('questionsLabel')}</Text>
           </View>
           <View style={{ width: 1, height: scaleSize(48), backgroundColor: '#E2E4E8' }} />
           <View style={{ alignItems: 'center', width: scaleSize(112) }}>
             <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>38</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>Minutes</Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('minutes')}</Text>
           </View>
           <View style={{ width: 1, height: scaleSize(48), backgroundColor: '#E2E4E8' }} />
           <View style={{ alignItems: 'center', width: scaleSize(112) }}>
             <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>6</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>Domains</Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('domains')}</Text>
           </View>
         </View>
 
         <View style={[styles.overviewCard, { padding: scaleSize(16), borderRadius: scaleSize(24), borderWidth: 1, borderColor: 'rgba(83, 91, 216, 0.21)' }]}>
           <View style={[styles.overviewHeader, { paddingBottom: scaleSize(12) }]}>
-            <Text style={[styles.overviewTitle, { fontSize: scaleSize(14) }]}>{childName}'s Screening Overview</Text>
+            <Text style={[styles.overviewTitle, { fontSize: scaleSize(14) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
             <View style={styles.overviewMetaRow}>
               <View style={styles.metaItem}>
                 <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
@@ -175,14 +198,14 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
 
           <View style={styles.scoreRow}>
             <View style={styles.scoreLabelRow}>
-              <Text style={[styles.scoreLabel, { fontSize: scaleSize(10) }]}>Score : </Text>
+              <Text style={[styles.scoreLabel, { fontSize: scaleSize(10) }]}>{t('score')} : </Text>
               <Text style={[styles.scoreValue, { fontSize: scaleSize(18) }]}>
                 {score} / {total} <Text style={{ color: '#6B7180' }}>*</Text>
               </Text>
             </View>
             <View style={[styles.resultBadge, { backgroundColor: severityColor, borderColor: severityColor, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
               <FlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#FFF" color="#FFF" />
-              <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#FFF' }]}>{result}</Text>
+              <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#FFF' }]}>{t(resultLabelKey)}</Text>
             </View>
           </View>
 
@@ -191,7 +214,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
           </View>
 
           <Text style={[styles.disclaimer, { fontSize: scaleSize(12), marginTop: scaleSize(10) }]}>
-            * The score is indicative, not diagnostic. Consult a specialist for confirmation.
+            {t('scoreDisclaimer')}
           </Text>
 
           <View style={[styles.domainGrid, { marginTop: scaleSize(16), gap: scaleSize(16) }]}>
@@ -214,7 +237,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
                             size={ringSize}
                             strokeWidth={ringThickness}
                             progress={progressVal}
-                            color={severityColor}
+                            color={domain.ringColor}
                           />
                           <View style={[styles.domainCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2, backgroundColor: domain.color }]}>
                             <Icon width={scaleSize(28)} height={scaleSize(28)} />
@@ -249,14 +272,14 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
               <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} fill="#FFF" color="#FFF" />
             </View>
             <View style={styles.resultCardTitles}>
-              <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10), color: severityColor }]}>SCREENING RESULT</Text>
-              <Text style={[styles.resultCardResult, { fontSize: scaleSize(18), color: severityColor }]}>{result}</Text>
+              <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10), color: severityColor }]}>{t('screeningResult')}</Text>
+              <Text style={[styles.resultCardResult, { fontSize: scaleSize(18), color: severityColor }]}>{t(resultLabelKey)}</Text>
               <Text style={[styles.resultCardScore, { fontSize: scaleSize(12) }]}>{score} / {total}</Text>
             </View>
           </View>
           <View style={[styles.resultDivider, { height: scaleSize(1), marginVertical: scaleSize(12), backgroundColor: `${severityColor}20` }]} />
           <Text style={[styles.resultDescription, { fontSize: scaleSize(12) }]}>
-            {childName} shows heavy signs across of severe autism across all clinical domains. Visiting a doctor and therapist as soon as possible is the most recommended.
+            {t(resultDescKey, { name: childName })}
           </Text>
         </View>
 
@@ -265,9 +288,9 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
             <WarningIcon width={scaleSize(24)} height={scaleSize(24)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(13) }]}>A screening is not a diagnosis</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(13) }]}>{t('screeningNotDiagnosis')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>
-              Screening results are not a diagnosis. They help identify developmental signals and guide your next steps.
+              {t('screeningNotDiagnosisBody')}
             </Text>
           </View>
         </View>
@@ -277,9 +300,9 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
             <CourageIcon width={scaleSize(28)} height={scaleSize(28)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: severityColor }]}>That took courage.</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: severityColor }]}>{t('thatTookCourage')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>
-              Thank you for showing up for {childName} in this powerful way.
+              {t('thankYouForShowingUp', { name: childName })}
             </Text>
           </View>
         </View>
@@ -289,8 +312,8 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
             <LockIcon width={scaleSize(28)} height={scaleSize(28)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#535BD8' }]}>Your responses are saved securely</Text>
-            <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>Encrypted, private, and yours alone.</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#535BD8' }]}>{t('responsesSavedSecurely')}</Text>
+            <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>{t('encryptedPrivateAndYours')}</Text>
           </View>
         </View>
       </ScrollView>
@@ -315,10 +338,10 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
             { height: scaleSize(54), borderRadius: scaleSize(28), opacity: pressed ? 0.9 : 1 },
           ]}
         >
-          <Text style={[styles.primaryCtaText, { fontSize: scaleSize(16) }]}>View {childName}'s Report</Text>
+          <Text style={[styles.primaryCtaText, { fontSize: scaleSize(16) }]}>{t('viewReportForName', { name: childName })}</Text>
         </Pressable>
         <Pressable onPress={() => navigation.navigate('Home')} style={styles.maybeLater}>
-          <Text style={[styles.maybeLaterText, { fontSize: scaleSize(14) }]}>Maybe later</Text>
+          <Text style={[styles.maybeLaterText, { fontSize: scaleSize(14) }]}>{t('maybeLater')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
