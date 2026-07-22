@@ -1015,17 +1015,6 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
               />
             ))}
           </View>
-          <Pressable
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: scaleSize(30),
-              zIndex: 10,
-            }}
-            onPress={() => {}}
-          >
-            <AddCircleIcon width={scaleSize(48)} height={scaleSize(48)} />
-          </Pressable>
         </View>
 
         <View style={styles.section}>
