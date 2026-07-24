@@ -130,7 +130,7 @@ export default function ChildSwitcherSheet({
               style={[styles.addChildCard, { paddingVertical: scaleSize(14), borderRadius: scaleSize(16) }]}
             >
               <View style={[styles.addChildIcon, { width: scaleSize(40), height: scaleSize(40), borderRadius: scaleSize(20) }]}>
-                <PlusIcon width={scaleSize(20)} height={scaleSize(20)} />
+                <PlusIcon width={scaleSize(20)} height={scaleSize(20)} color={colors.primaryBlue} />
               </View>
               <Text style={[styles.addChildText, { fontSize: scaleSize(14) }]} numberOfLines={2}>{t('addAnotherChild')}</Text>
             </Pressable>

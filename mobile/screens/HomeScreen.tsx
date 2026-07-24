@@ -452,7 +452,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
         if (!answers[r.domain]) {
           answers[r.domain] = [];
         }
-        const val = typeof r.value === 'number' ? (r.value > 4 ? r.value - 1 : r.value) : 0;
+        const val = typeof r.score === 'number' ? Math.max(0, r.score - 1) : 0;
         answers[r.domain].push(val);
       });
     }
@@ -545,7 +545,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     if (session.responses) {
       session.responses.forEach((r: any) => {
         if (!answers[r.domain]) answers[r.domain] = [];
-        const val = typeof r.value === 'number' ? (r.value > 4 ? r.value - 1 : r.value) : 0;
+        const val = typeof r.score === 'number' ? Math.max(0, r.score - 1) : 0;
         answers[r.domain].push(val);
       });
     }
@@ -584,8 +584,10 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
 
   const handleStartNew = useCallback(() => {
     setPlusMenuVisible(false);
+    screening.reset();
+    navigation.setParams({ progress: undefined });
     navigation.navigate('BeginScreening');
-  }, [navigation]);
+  }, [navigation, screening]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -1110,7 +1112,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               },
             ]}
           >
-            <PlusIcon width={scaleSize(32)} height={scaleSize(32)} />
+            <PlusIcon width={scaleSize(32)} height={scaleSize(32)} color={colors.white} />
           </Pressable>
         )}
       </View>

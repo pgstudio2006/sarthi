@@ -64,9 +64,10 @@ export default function CreateProfileScreen({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const DEFAULT_DOB = new Date('2020-01-01');
   const parsedInitialDob = initialDob ? parseDateInput(initialDob) : undefined;
   const [childName, setChildName] = useState(initialChildName);
-  const [dob, setDob] = useState(parsedInitialDob ? toISODate(parsedInitialDob) : '');
+  const [dob, setDob] = useState(parsedInitialDob ? toISODate(parsedInitialDob) : toISODate(DEFAULT_DOB));
   const [gender, setGender] = useState<string | null>(initialGender || null);
   const [birthContext, setBirthContext] = useState<string | null>(initialBirthContext || null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -200,7 +201,7 @@ export default function CreateProfileScreen({
         visible={showDatePicker}
         initialDate={parseISODate(dob)}
         maxDate={new Date()}
-        onSelect={(date) => { setDob(toISODate(date)); setError(''); }}
+        onSelect={(date: Date) => { setDob(toISODate(date)); setError(''); }}
         onClose={() => setShowDatePicker(false)}
       />
     </ScreenLayout>

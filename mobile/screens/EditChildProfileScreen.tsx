@@ -36,7 +36,8 @@ export default function EditChildProfileScreen({ navigation, route }: { navigati
   const { user, token, signIn } = useAuth();
   const child: ChildProfile = route?.params?.child;
 
-  const initialDobDate = child?.dateOfBirth ? (parseDateInput(child.dateOfBirth) ?? new Date()) : new Date();
+  const DEFAULT_DOB = new Date('2020-01-01');
+  const initialDobDate = child?.dateOfBirth ? (parseDateInput(child.dateOfBirth) ?? DEFAULT_DOB) : DEFAULT_DOB;
   const [childName, setChildName] = useState(child?.name || '');
   const [dob, setDob] = useState(toISODate(initialDobDate));
   const [gender, setGender] = useState<string | null>(child?.gender || null);
@@ -183,7 +184,7 @@ export default function EditChildProfileScreen({ navigation, route }: { navigati
         visible={showDatePicker}
         initialDate={parseISODate(dob)}
         maxDate={new Date()}
-        onSelect={(date) => { setDob(toISODate(date)); setError(''); }}
+        onSelect={(date: Date) => { setDob(toISODate(date)); setError(''); }}
         onClose={() => setShowDatePicker(false)}
       />
     </SafeAreaView>

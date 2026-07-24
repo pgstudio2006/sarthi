@@ -184,8 +184,8 @@ function getOverallCategory(score: number): CategoryConfig {
   if (score <= 80) {
     return {
       label: 'Mild Signs',
-      color: '#1E8E3E',
-      lightBg: '#E6F4EA',
+      color: '#BB853E',
+      lightBg: '#FFF8E1',
       explanation: 'A few early signals were noticed. These are not a diagnosis, but are worth watching.',
       recommendation: 'Monitor progress and consider a follow-up screening in a few weeks.',
     };
@@ -282,8 +282,8 @@ function buildReportHtml(data: ScreeningReportData): string {
     questions.forEach((q, i) => {
       const a = answers[i];
       if (a === null || a === undefined) missing.push(q);
-      else if (a < 2) working.push(q);
-      else if (a >= 3) attention.push(q);
+      else if (a >= 2) attention.push(q);
+      else working.push(q);
     });
 
     const workingItems = working.length

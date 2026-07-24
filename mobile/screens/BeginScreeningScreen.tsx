@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -38,6 +38,10 @@ export default function BeginScreeningScreen({ navigation }: { navigation: any }
   const childName = activeChild?.name || user?.children?.[0]?.name || t('yourChild');
 
   const childId = activeChild?.id || user?.children?.[0]?.id;
+
+  useEffect(() => {
+    screening.reset();
+  }, [screening.reset]);
 
   const handleStart = async () => {
     if (!childId) {

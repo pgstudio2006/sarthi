@@ -53,7 +53,7 @@ export default function SplashScreen({ navigation }: { navigation: any }) {
     if (!targetScreen) return;
     const timer = setTimeout(() => {
       navigation.replace(targetScreen);
-    }, 2000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [targetScreen, navigation]);
 
