@@ -411,8 +411,8 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
       status: statusStr,
       statusColor: statusColorStr,
       statusBg: statusBgStr,
-      attention: attention.length > 0 ? attention : d.attention,
-      strengths: strengths.length > 0 ? strengths : d.strengths,
+      attention: attention.length > 0 ? attention : (answers.length > 0 ? [] : d.attention),
+      strengths: strengths.length > 0 ? strengths : (answers.length > 0 ? [] : d.strengths),
     };
   });
 
@@ -454,7 +454,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
           <Text style={[styles.overviewTitle, { fontSize: scaleSize(16) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
           <View style={styles.overviewMetaRow}>
             <View style={styles.metaItem}>
-              <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
+              <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} color="#6B7180" />
               <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{date}</Text>
             </View>
             <View style={styles.metaItem}>

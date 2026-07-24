@@ -16,7 +16,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useScreening } from '../context/ScreeningContext';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
 import PauseIcon from '../assets/figma/screen18/motion_photos_paused.svg';
-import TrophyIcon from '../assets/figma/screen22/trophy.svg';
+import SectionProgressWidget from '../components/SectionProgressWidget';
 import SocialIcon from '../assets/figma/screen18/Frame-2.svg';
 import EmotionIcon from '../assets/figma/screen18/Frame-5.svg';
 import SpeechIcon from '../assets/figma/screen18/Frame-3.svg';
@@ -199,39 +199,7 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
         showsVerticalScrollIndicator={false}
       >
         <View style={{ gap: scaleSize(12), paddingTop: scaleSize(8) }}>
-  <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#F3F2FF',
-              borderRadius: scaleSize(16),
-              padding: scaleSize(16),
-              gap: scaleSize(16),
-            }}
-          >
-            <TrophyIcon width={scaleSize(32)} height={scaleSize(32)} />
-            <View style={{ flex: 1, gap: scaleSize(4) }}>
-              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleFont(16), color: colors.mainBlack }}>
-                You're doing great!
-              </Text>
-              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: scaleFont(13), color: '#3B3B3E' }}>
-                4 sections complete. You've answered 30 questions about your child so far.
-              </Text>
-              <View style={{ flexDirection: 'row', gap: scaleSize(4), marginTop: scaleSize(8) }}>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <View
-                    key={i}
-                    style={{
-                      flex: 1,
-                      height: scaleSize(4),
-                      borderRadius: scaleSize(2),
-                      backgroundColor: i < 4 ? '#535BD8' : '#E2E4E8',
-                    }}
-                  />
-                ))}
-              </View>
-            </View>
-          </View>
+          <SectionProgressWidget currentDomain="Sensory" />
           {QUESTIONS.map((question, qIndex) => (
             <View
               key={qIndex}

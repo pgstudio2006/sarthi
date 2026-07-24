@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
+import { useTranslation } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import AvatarIcon from '../assets/figma/screen16/image 9 [Vectorized].svg';
 import CloseIcon from '../assets/figma/screen26/Frame-32.svg';
@@ -92,6 +93,7 @@ function SectionCard({ children, top }: { children: React.ReactNode; top: number
 
 export default function ProfileSettingsScreen({ navigation }: { navigation: any }) {
   const { scaleSize } = useResponsive();
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const caregiver = user?.caregiverProfile;
   const children = user?.children || [];
@@ -189,9 +191,9 @@ export default function ProfileSettingsScreen({ navigation }: { navigation: any 
 
             <Pressable style={[sectionStyles.addChildBtn, { borderRadius: scaleSize(14), paddingVertical: scaleSize(11), paddingHorizontal: scaleSize(12) }]}>
               <View style={[sectionStyles.addChildIcon, { width: scaleSize(28), height: scaleSize(28), borderRadius: scaleSize(14) }]}>
-                <PlusIcon width={scaleSize(14)} height={scaleSize(14)} />
+                <PlusIcon width={scaleSize(14)} height={scaleSize(14)} color={colors.primaryBlue} />
               </View>
-              <Text style={[sectionStyles.addChildText, { fontSize: scaleSize(13) }]}>Add another child</Text>
+              <Text style={[sectionStyles.addChildText, { fontSize: scaleSize(13) }]}>{t('addAnotherChild')}</Text>
             </Pressable>
           </View>
 

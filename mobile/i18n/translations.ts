@@ -298,7 +298,7 @@ export const translations: Record<AppLanguage, TranslationTable> = {
     weKnowParentingIsBusy: "We know\nparenting is busy!",
     progressSavedBody: "Your progress has been saved.\nYou can pick up right where you left off.",
     progressSavedTitle: 'Progress saved',
-    finishLater: 'Finish later',
+    finishLater: 'Finish Later',
     sectionsRemaining: '{count} sections remaining',
   },
   Hindi: {

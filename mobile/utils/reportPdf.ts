@@ -403,7 +403,7 @@ export function getResultColors(result?: string) {
     return { text: '#C65D00', bg: '#FFF3E0', border: '#FF9900', fill: '#C65D00' };
   }
   if (r.includes('mild')) {
-    return { text: '#D97706', bg: '#FEF3C7', border: '#F59E0B', fill: '#D97706' };
+    return { text: '#BB853E', bg: '#FEF3C7', border: '#BB853E', fill: '#BB853E' };
   }
   return { text: '#1A7340', bg: '#E6F4EA', border: '#34A853', fill: '#1A7340' };
 }

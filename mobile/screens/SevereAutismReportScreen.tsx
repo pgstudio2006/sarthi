@@ -378,8 +378,8 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
       status: statusStr,
       statusColor: statusColorStr,
       statusBg: statusBgStr,
-      attention: attention.length > 0 ? attention : d.attention,
-      strengths: strengths.length > 0 ? strengths : d.strengths,
+      attention: attention.length > 0 ? attention : (answers.length > 0 ? [] : d.attention),
+      strengths: strengths.length > 0 ? strengths : (answers.length > 0 ? [] : d.strengths),
     };
   });
 
@@ -413,7 +413,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
     if (!childId) return;
     getAiFaqs(childId).then((res) => {
       if (!mounted) return;
-      if (res.success && res.data.faqs.length === 10) {
+      if (res.success && res.data.faqs.length === 10 && res.data.mode !== 'generic') {
         setReportFAQs(res.data.faqs);
       }
     });
@@ -437,7 +437,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
         <View style={[styles.overviewCard, { padding: scaleSize(16), borderRadius: scaleSize(24), borderWidth: 1, borderColor: 'rgba(83, 91, 216, 0.21)' }]}>
           <Text style={[styles.overviewTitle, { fontSize: scaleSize(16) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
           <View style={styles.overviewMetaRow}>
-            <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
+            <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} color="#6B7180" />
             <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(6) }]}>{date}</Text>
             <View style={{ marginLeft: scaleSize(16), flexDirection: 'row', alignItems: 'center' }}>
               <PersonIcon width={scaleSize(16)} height={scaleSize(16)} fill="#6B7180" color="#6B7180" />

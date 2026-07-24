@@ -45,7 +45,7 @@ import BookmarkIcon from '../assets/figma/screen26/bookmarks.svg';
 import CloseIcon from '../assets/figma/screen26/Frame-32.svg';
 import ChildSwitcherSheet from '../components/ChildSwitcherSheet';
 import SideMenu from '../components/SideMenu';
-import CalendarIcon from '../assets/figma/screen28/Frame-2.svg';
+import CalendarIcon from '../assets/figma/screen28/calendar_month.svg';
 import PersonIcon from '../assets/figma/screen27/Frame-7.svg';
 
 const SECTION_QUESTION_COUNTS = [9, 5, 9, 7, 6, 4];
@@ -227,17 +227,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     const id = overrideChildId || child?.id;
     if (!id) return;
     setHistoryLoading(true);
-    const [historyResult, aiResult] = await Promise.all([
-      getScreeningHistory(id),
-      getAiFaqs(id),
-    ]);
+    const historyResult = await getScreeningHistory(id);
     if (historyResult.success) {
       setScreeningHistory(historyResult.data.sessions);
     }
-    if (aiResult.success && aiResult.data.faqs.length === 10) {
-      setAiFaqs(aiResult.data.faqs);
-    }
     setHistoryLoading(false);
+
+    const aiResult = await getAiFaqs(id);
+    if (aiResult.success && aiResult.data.faqs.length > 0 && aiResult.data.mode !== 'generic') {
+      setAiFaqs(aiResult.data.faqs.slice(0, 5));
+    }
   }, [child?.id]);
 
   useEffect(() => {
@@ -370,7 +369,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
 
   // Dynamic FAQs based on completed screening counts and active session status
   const dynamicFAQs = useMemo(() => {
-    if (aiFaqs.length === 10) return aiFaqs;
+    if (aiFaqs.length > 0) return aiFaqs;
     const inProgress = activeSession !== undefined;
     let progressPercent = 0;
     const completedDomains: string[] = [];
@@ -659,9 +658,9 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 
                 <View style={[styles.overviewMetaRow, { marginTop: scaleSize(8) }]}>
                   <View style={styles.metaItem}>
-                    <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
+                    <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} color="#6B7180" />
                     <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>
-                      {latestCompletedSession.date || '8 June 2026'}
+                      {latestCompletedSession.date || '—'}
                     </Text>
                   </View>
                   <View style={styles.metaItem}>
@@ -690,7 +689,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                       ? { text: '#EA580C', bg: '#FFEDD5' }
                       : latestCompletedSession.result.includes('Severe')
                       ? { text: '#A83B3B', bg: '#FDF2F2' }
-                      : { text: '#D97706', bg: '#FEF3C7' };
+                      : { text: '#BB853E', bg: '#FEF3C7' };
                     return (
                       <View style={[styles.resultBadge, { backgroundColor: colors.bg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
                         <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={colors.text} color={colors.text} />
@@ -709,7 +708,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                     ? '#EA580C'
                     : latestCompletedSession.result.includes('Severe')
                     ? '#A83B3B'
-                    : '#D97706';
+                    : '#BB853E';
                   const progress = Math.min(1, Math.max(0, latestCompletedSession.score / latestCompletedSession.total));
                   return (
                     <View style={[styles.progressTrack, { height: scaleSize(5), borderRadius: scaleSize(3), marginTop: scaleSize(10), backgroundColor: '#E2E4E8' }]}>
@@ -897,13 +896,13 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                         ? { text: '#EA580C', bg: '#FFEDD5' }
                         : session.result.includes('Severe')
                         ? { text: '#A83B3B', bg: '#FDF2F2' }
-                        : { text: '#D97706', bg: '#FEF3C7' };
+                        : { text: '#BB853E', bg: '#FEF3C7' };
                       return (
                         <View key={`session-${index}`} style={[styles.historyCard, { borderRadius: scaleSize(16), padding: scaleSize(14) }]}>
                           <View style={styles.historyRow}>
                             <View style={styles.historyMeta}>
                               <View style={styles.metaItem}>
-                                <CalendarIcon width={scaleSize(14)} height={scaleSize(14)} />
+                                <CalendarIcon width={scaleSize(14)} height={scaleSize(14)} color="#6B7180" />
                                 <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{session.date || '—'}</Text>
                               </View>
                               <View style={[styles.metaItem, { marginTop: scaleSize(4) }]}>
@@ -942,7 +941,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), marginTop: scaleSize(4), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>{t('learnMoreAboutChild')}</Text>
               
               <View style={{ gap: scaleSize(10) }}>
-                {(dynamicFAQs.length > 0 ? dynamicFAQs : FAQS.slice(0, 3)).map((faq, index) => {
+                {(dynamicFAQs.length > 0 ? dynamicFAQs.slice(0, 5) : FAQS.slice(0, 3)).map((faq, index) => {
                   const isExpanded = expandedLearnMore === index;
                   return (
                     <GradientBorderCard

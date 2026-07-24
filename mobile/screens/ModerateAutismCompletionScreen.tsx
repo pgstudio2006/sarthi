@@ -44,12 +44,12 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
   const { t } = useTranslation();
   const screening = useScreening();
 
-  const childName      = route?.params?.childName     ?? 'Nitya';
+  const childName      = route?.params?.childName     ?? t('yourChild');
   const score          = route?.params?.score         ?? 141;
   const total          = route?.params?.total         ?? 200;
   const result         = route?.params?.result        ?? 'Moderate Autism';
-  const date           = route?.params?.date          ?? '8 June 2026';
-  const screener       = route?.params?.screener      ?? 'Dhaval (Father)';
+  const date           = route?.params?.date          ?? '';
+  const screener       = route?.params?.screener      ?? t('caregiver');
   const domainBreakdown = route?.params?.domainBreakdown;
   const domainAnswers  = route?.params?.domainAnswers ?? screening?.domainAnswers ?? {};
   const isRepeat       = route?.params?.isRepeat      ?? false;
@@ -175,7 +175,7 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
             <Text style={[styles.overviewTitle, { fontSize: scaleSize(14) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
             <View style={styles.overviewMetaRow}>
               <View style={styles.metaItem}>
-                <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
+                <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} color="#6B7180" />
                 <Text style={[styles.metaText, { fontSize: scaleSize(12) }]}>{date}</Text>
               </View>
               <View style={styles.metaItem}>

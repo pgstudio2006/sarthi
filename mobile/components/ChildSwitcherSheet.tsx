@@ -13,6 +13,7 @@ import { useTranslation, useDateLocale } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { ChildProfile } from '../api/client';
 import AvatarIcon from '../assets/figma/screen16/image 9 [Vectorized].svg';
+import PersonIcon from '../assets/figma/screen27/Frame-7.svg';
 import PlusIcon from '../assets/figma/screen25/add_2.svg';
 import CloseIcon from '../assets/figma/screen26/Frame-32.svg';
 import EditIcon from '../assets/figma/screen25/stylus_note.svg';
@@ -74,7 +75,7 @@ export default function ChildSwitcherSheet({
 
         <View style={[styles.caregiverCard, { marginHorizontal: scaleSize(20), padding: scaleSize(14), borderRadius: scaleSize(18), marginBottom: scaleSize(20) }]}> 
           <View style={[styles.caregiverAvatar, { width: scaleSize(48), height: scaleSize(48), borderRadius: scaleSize(24) }]}> 
-            <AvatarIcon width={scaleSize(28)} height={scaleSize(28)} />
+            <PersonIcon width={scaleSize(28)} height={scaleSize(28)} />
           </View>
           <View style={styles.caregiverInfo}>
             <Text style={[styles.caregiverName, { fontSize: scaleSize(16) }]}>{caregiver?.name || t('caregiver')}</Text>

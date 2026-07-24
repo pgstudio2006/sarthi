@@ -92,8 +92,8 @@ export default function CreateProfileScreen({
     setSubmitting(false);
     if (result.success) {
       if (user && token) {
-        signIn(token, { ...user, children: [...(user.children || []), result.data.child] });
-        setActiveChildId(result.data.child.id);
+        await signIn(token, { ...user, children: [...(user.children || []), result.data.child] });
+        await setActiveChildId(result.data.child.id);
       }
       navigation.navigate(nextRoute);
     } else {
