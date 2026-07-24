@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
+import { useScreening } from '../context/ScreeningContext';
 import ProgressRing from '../components/ProgressRing';
 import LogoIcon from '../assets/logo.svg';
 import CloseIcon from '../assets/figma/screen27/Frame-11.svg';
@@ -41,6 +42,7 @@ const DOMAINS = [
 export default function ModerateAutismCompletionScreen({ navigation, route }: any) {
   const { scaleSize, padding } = useResponsive();
   const { t } = useTranslation();
+  const screening = useScreening();
 
   const childName      = route?.params?.childName     ?? 'Nitya';
   const score          = route?.params?.score         ?? 141;
@@ -49,7 +51,7 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
   const date           = route?.params?.date          ?? '8 June 2026';
   const screener       = route?.params?.screener      ?? 'Dhaval (Father)';
   const domainBreakdown = route?.params?.domainBreakdown;
-  const domainAnswers  = route?.params?.domainAnswers ?? {};
+  const domainAnswers  = route?.params?.domainAnswers ?? screening?.domainAnswers ?? {};
   const isRepeat       = route?.params?.isRepeat      ?? false;
   const previousScore  = route?.params?.previousScore ?? null;
   const progressFill   = Math.min(1, Math.max(0, score / total));

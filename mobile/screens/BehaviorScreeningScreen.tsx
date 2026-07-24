@@ -196,41 +196,7 @@ export default function BehaviorScreeningScreen({ navigation }: { navigation: an
         </ScrollView>
       </View>
 
-      <View style={{ paddingHorizontal: padding, paddingTop: scaleSize(12) }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#F3F2FF',
-            borderRadius: scaleSize(16),
-            padding: scaleSize(16),
-            gap: scaleSize(16),
-          }}
-        >
-          <TrophyIcon width={scaleSize(32)} height={scaleSize(32)} />
-          <View style={{ flex: 1, gap: scaleSize(4) }}>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleFont(16), color: colors.mainBlack }}>
-              You're doing great!
-            </Text>
-            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: scaleFont(13), color: '#3B3B3E' }}>
-              3 sections complete. You've answered 23 questions about your child so far.
-            </Text>
-            <View style={{ flexDirection: 'row', gap: scaleSize(4), marginTop: scaleSize(8) }}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <View
-                  key={i}
-                  style={{
-                    flex: 1,
-                    height: scaleSize(4),
-                    borderRadius: scaleSize(2),
-                    backgroundColor: i < 3 ? '#535BD8' : '#E2E4E8',
-                  }}
-                />
-              ))}
-            </View>
-          </View>
-        </View>
-      </View>
+
 
       <ScrollView
         ref={scrollRef}
@@ -239,6 +205,39 @@ export default function BehaviorScreeningScreen({ navigation }: { navigation: an
         showsVerticalScrollIndicator={false}
       >
         <View style={{ gap: scaleSize(12), paddingTop: scaleSize(8) }}>
+  <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#F3F2FF',
+              borderRadius: scaleSize(16),
+              padding: scaleSize(16),
+              gap: scaleSize(16),
+            }}
+          >
+            <TrophyIcon width={scaleSize(32)} height={scaleSize(32)} />
+            <View style={{ flex: 1, gap: scaleSize(4) }}>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleFont(16), color: colors.mainBlack }}>
+                You're doing great!
+              </Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: scaleFont(13), color: '#3B3B3E' }}>
+                3 sections complete. You've answered 23 questions about your child so far.
+              </Text>
+              <View style={{ flexDirection: 'row', gap: scaleSize(4), marginTop: scaleSize(8) }}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: scaleSize(4),
+                      borderRadius: scaleSize(2),
+                      backgroundColor: i < 3 ? '#535BD8' : '#E2E4E8',
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
           {QUESTIONS.map((question, qIndex) => (
             <View
               key={qIndex}

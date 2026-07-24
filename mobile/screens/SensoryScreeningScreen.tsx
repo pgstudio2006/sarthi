@@ -69,7 +69,7 @@ const QUESTIONS: LocalizedQuestion[] = [
     Kannada: { text: `ಬಿದ್ದರೂ ಅಥವಾ ಗಾಯವಾದರೂ ಮಗು ತುಂಬಾ ಕಡಿಮೆ ಅಳುತ್ತದೆಯೇ ಅಥವಾ ನೋವಾಗಿದೆ ಎಂದು ಹೇಳುವುದಿಲ್ಲವೇ?`, tip: `ಬಿದ್ದು, ಡಿಕ್ಕಿ ಹೊಡೆದರೂ ಅಥವಾ ಗಾಯವಾದರೂ ಮಗು ಹೆಚ್ಚು ಅಳುವುದಿಲ್ಲ ಅಥವಾ ನೋವಾಗಿದೆ ಎಂದು ಹೇಳುವುದಿಲ್ಲ.`, options: ['ಬಹಳ ಕಡಿಮೆ', 'ಕೆಲವೊಮ್ಮೆ', 'ಆಗಾಗ್ಗೆ', 'ಹೆಚ್ಚಿನ ಸಮಯ', 'ಬಹುತೇಕ ಯಾವಾಗಲೂ'] },
   },
   {
-    English: { text: `How often does the child smell, touch, or taste people or objects in unusual ways?`, tip: `The child repeatedly smells toys, touches people's hair or face, or puts non-food objects into their mouth.`, options: ['Rarely', 'Sometimes', 'Often', 'Most of the times', 'Almost Always'] },
+    English: { text: `How often does child repeatedly smell objects, put things in their mouth, or frequently touch people?`, tip: `The child repeatedly smells toys, touches people's hair or face, or puts non-food objects into their mouth.`, options: ['Rarely', 'Sometimes', 'Often', 'Most of the times', 'Almost Always'] },
     Gujarati: { text: `બાળક વસ્તુઓને વારંવાર સૂંઘે, મોઢામાં મૂકે અથવા લોકોને વારંવાર સ્પર્શ કરે છે?`, tip: `બાળક રમકડાં સૂંઘે, લોકોના વાળ અથવા ચહેરાને વારંવાર સ્પર્શે અથવા ખાવાની વસ્તુ ન હોય તેવી વસ્તુ મોઢામાં મૂકે.`, options: ['ભાગ્યે જ', 'ક્યારેક', 'ઘણી વખત', 'મોટાભાગે', 'લગભગ હંમેશા'] },
     Hindi: { text: `क्या बच्चा चीज़ों को बार-बार सूंघता, मुँह में डालता या लोगों को बार-बार छूता है?`, tip: `बच्चा खिलौने या दूसरी चीज़ों को बार-बार सूंघता या मुँह में डालता है, या लोगों के बाल या हाथ बार-बार छूता है।`, options: ['बहुत कम', 'कभी-कभी', 'अक्सर', 'ज़्यादातर', 'लगभग हमेशा'] },
     Kannada: { text: `ಮಗು ವಸ್ತುಗಳನ್ನು ಮತ್ತೆ ಮತ್ತೆ ಮೂಸುತ್ತದೆಯೇ, ಬಾಯಿಗೆ ಹಾಕುತ್ತದೆಯೇ ಅಥವಾ ಜನರನ್ನು ಪದೇ ಪದೇ ಮುಟ್ಟುತ್ತದೆಯೇ?`, tip: `ಮಗು ಆಟಿಕೆಗಳು ಅಥವಾ ಇತರ ವಸ್ತುಗಳನ್ನು ಪದೇ ಪದೇ ಮೂಸುತ್ತದೆ ಅಥವಾ ಬಾಯಿಗೆ ಹಾಕುತ್ತದೆ, ಅಥವಾ ಜನರ ಕೂದಲು ಅಥವಾ ಕೈಗಳನ್ನು ಪದೇ ಪದೇ ಮುಟ್ಟುತ್ತದೆ.`, options: ['ಬಹಳ ಕಡಿಮೆ', 'ಕೆಲವೊಮ್ಮೆ', 'ಆಗಾಗ್ಗೆ', 'ಹೆಚ್ಚಿನ ಸಮಯ', 'ಬಹುತೇಕ ಯಾವಾಗಲೂ'] },
@@ -190,41 +190,7 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
         </ScrollView>
       </View>
 
-      <View style={{ paddingHorizontal: padding, paddingTop: scaleSize(12) }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#F3F2FF',
-            borderRadius: scaleSize(16),
-            padding: scaleSize(16),
-            gap: scaleSize(16),
-          }}
-        >
-          <TrophyIcon width={scaleSize(32)} height={scaleSize(32)} />
-          <View style={{ flex: 1, gap: scaleSize(4) }}>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleFont(16), color: colors.mainBlack }}>
-              You're doing great!
-            </Text>
-            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: scaleFont(13), color: '#3B3B3E' }}>
-              4 sections complete. You've answered 30 questions about your child so far.
-            </Text>
-            <View style={{ flexDirection: 'row', gap: scaleSize(4), marginTop: scaleSize(8) }}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <View
-                  key={i}
-                  style={{
-                    flex: 1,
-                    height: scaleSize(4),
-                    borderRadius: scaleSize(2),
-                    backgroundColor: i < 4 ? '#535BD8' : '#E2E4E8',
-                  }}
-                />
-              ))}
-            </View>
-          </View>
-        </View>
-      </View>
+
 
       <ScrollView
         ref={scrollRef}
@@ -233,6 +199,39 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
         showsVerticalScrollIndicator={false}
       >
         <View style={{ gap: scaleSize(12), paddingTop: scaleSize(8) }}>
+  <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#F3F2FF',
+              borderRadius: scaleSize(16),
+              padding: scaleSize(16),
+              gap: scaleSize(16),
+            }}
+          >
+            <TrophyIcon width={scaleSize(32)} height={scaleSize(32)} />
+            <View style={{ flex: 1, gap: scaleSize(4) }}>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleFont(16), color: colors.mainBlack }}>
+                You're doing great!
+              </Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: scaleFont(13), color: '#3B3B3E' }}>
+                4 sections complete. You've answered 30 questions about your child so far.
+              </Text>
+              <View style={{ flexDirection: 'row', gap: scaleSize(4), marginTop: scaleSize(8) }}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: scaleSize(4),
+                      borderRadius: scaleSize(2),
+                      backgroundColor: i < 4 ? '#535BD8' : '#E2E4E8',
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
           {QUESTIONS.map((question, qIndex) => (
             <View
               key={qIndex}

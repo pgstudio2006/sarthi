@@ -215,18 +215,21 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [plusMenuVisible, setPlusMenuVisible] = useState(false);
   const [childSwitcherVisible, setChildSwitcherVisible] = useState(false);
+  const [firstFoldBottom, setFirstFoldBottom] = useState(0);
+  const [showBottomStartCta, setShowBottomStartCta] = useState(false);
 
   // Screening history and loading states
   const [screeningHistory, setScreeningHistory] = useState<any[]>([]);
   const [aiFaqs, setAiFaqs] = useState<AiFaq[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const fetchHistory = useCallback(async () => {
-    if (!child?.id) return;
+  const fetchHistory = useCallback(async (overrideChildId?: string) => {
+    const id = overrideChildId || child?.id;
+    if (!id) return;
     setHistoryLoading(true);
     const [historyResult, aiResult] = await Promise.all([
-      getScreeningHistory(child.id),
-      getAiFaqs(child.id),
+      getScreeningHistory(id),
+      getAiFaqs(id),
     ]);
     if (historyResult.success) {
       setScreeningHistory(historyResult.data.sessions);
@@ -595,6 +598,11 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
         <ScrollView
           contentContainerStyle={{ paddingBottom: scaleSize(130) }}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(e) => {
+            const y = e.nativeEvent.contentOffset.y;
+            setShowBottomStartCta(y > firstFoldBottom);
+          }}
         >
           <View style={[styles.topBar, { paddingHorizontal: padding, paddingTop: scaleSize(16) }]}>
             <Pressable style={styles.profileBlock} onPress={() => setChildSwitcherVisible(true)} hitSlop={scaleSize(8)}>
@@ -615,7 +623,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
             </Pressable>
           </View>
 
-          {latestCompletedSession ? (
+          {latestCompletedSession && !continueProgress ? (
             <View style={{ paddingHorizontal: padding, gap: scaleSize(16), marginTop: scaleSize(16) }}>
 
               {/* Re-screen banner */}
@@ -820,6 +828,8 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 title={t('screeningNotDiagnosis')}
                 titleColor="#535BD8"
                 subtitle={t('screeningNotDiagnosisBody')}
+                borderWidth={1}
+                borderColor="#E2E4E8"
               />
 
               {completedSessions.length > 1 && (
@@ -932,7 +942,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
               <Text style={[styles.sectionTitle, { fontSize: scaleSize(15), marginTop: scaleSize(4), fontFamily: 'Inter_600SemiBold', color: '#18182D' }]}>{t('learnMoreAboutChild')}</Text>
               
               <View style={{ gap: scaleSize(10) }}>
-                {FAQS.slice(0, 3).map((faq, index) => {
+                {(dynamicFAQs.length > 0 ? dynamicFAQs : FAQS.slice(0, 3)).map((faq, index) => {
                   const isExpanded = expandedLearnMore === index;
                   return (
                     <GradientBorderCard
@@ -944,7 +954,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                       padding={scaleSize(12)}
                     >
                       <View style={[styles.learnMoreHeader, { flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }]}>
-                        <Text style={[styles.learnMoreTitle, { fontSize: scaleSize(14), flex: 1, fontFamily: 'Inter_500Medium', color: '#18182D' }]}>{t(faq.titleKey)}</Text>
+                        <Text style={[styles.learnMoreTitle, { fontSize: scaleSize(14), flex: 1, fontFamily: 'Inter_500Medium', color: '#18182D' }]}>{'titleKey' in faq ? t((faq as any).titleKey) : faq.title}</Text>
                         <View style={[styles.learnMoreToggle, { width: scaleSize(20), height: scaleSize(20), borderRadius: scaleSize(10), backgroundColor: '#5963E1', justifyContent: 'center', alignItems: 'center' }]}>
                           <Text style={{ color: '#FFFFFF', fontSize: scaleSize(16), lineHeight: scaleSize(18), fontWeight: '700' }}>{isExpanded ? '−' : '+'}</Text>
                         </View>
@@ -952,22 +962,24 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                       {isExpanded && (
                         <View style={{ marginTop: scaleSize(10) }}>
                           <Text style={[styles.learnMoreBody, { fontSize: scaleSize(12), fontFamily: 'Inter_400Regular', color: '#454545', lineHeight: scaleSize(15) }]}>
-                            {t(faq.bodyKey)}
+                            {'bodyKey' in faq ? t((faq as any).bodyKey) : faq.body}
                           </Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6), marginTop: scaleSize(10) }}>
-                            <View style={[styles.learnMoreToggle, { width: scaleSize(20), height: scaleSize(20), borderRadius: scaleSize(10), backgroundColor: '#F3F2FF', justifyContent: 'center', alignItems: 'center' }]}>
-                              <Text style={{ color: '#5963E1', fontSize: scaleSize(12), fontWeight: '700' }}>→</Text>
-                            </View>
-                            <Text style={{ fontSize: scaleSize(12), fontFamily: 'Inter_500Medium', color: '#5963E1', lineHeight: scaleSize(15) }}>
-                              {t('askSaarathiCare')}
-                            </Text>
-                          </View>
                         </View>
                       )}
                     </GradientBorderCard>
                   );
                 })}
               </View>
+            </View>
+          ) : continueProgress ? (
+            <View style={{ paddingHorizontal: padding, marginTop: scaleSize(16) }}>
+              <HeroCard
+                onPress={handleContinue}
+                onContinue={handleContinue}
+                onStartNew={handleStartNew}
+                progress={continueProgress}
+                childName={child?.name || t('yourChild')}
+              />
             </View>
           ) : (
             <>
@@ -1021,6 +1033,14 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                   ))}
                 </View>
               </Section>
+
+              <View
+                style={{ height: 0 }}
+                onLayout={(e) => {
+                  const { y, height } = e.nativeEvent.layout;
+                  setFirstFoldBottom(y + height);
+                }}
+              />
 
               <Section title={t('howDoesItWork')} scaleSize={scaleSize}>
                 <View style={{ gap: 0, marginTop: scaleSize(16) }}>
@@ -1082,7 +1102,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
           )}
         </ScrollView>
 
-        {!continueProgress && !latestCompletedSession && (
+        {!continueProgress && !latestCompletedSession && showBottomStartCta && (
           <View style={[styles.initialCtaFooter, { paddingHorizontal: padding, paddingBottom: scaleSize(16) }]}>
             <Pressable
               onPress={handleStartNew}
@@ -1126,7 +1146,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
       <ChildSwitcherSheet
         visible={childSwitcherVisible}
         onClose={() => setChildSwitcherVisible(false)}
-        onSelectChild={() => { fetchHistory(); }}
+        onSelectChild={(selectedChild: ChildProfile) => { fetchHistory(selectedChild.id); }}
         onAddChild={() => { setChildSwitcherVisible(false); navigation.navigate('CreateProfile', { nextRoute: 'Home' }); }}
         onEditChild={(c: ChildProfile) => { setChildSwitcherVisible(false); navigation.navigate('EditChildProfile', { child: c }); }}
       />

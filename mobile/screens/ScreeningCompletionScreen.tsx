@@ -163,23 +163,6 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
           </Text>
         </View>
 
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: scaleSize(0), backgroundColor: '#fff', borderRadius: scaleSize(16), borderWidth: 1, borderColor: '#E2E4E8', paddingVertical: scaleSize(16) }}>
-          <View style={{ alignItems: 'center', width: scaleSize(112) }}>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>40</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('questionsLabel')}</Text>
-          </View>
-          <View style={{ width: 1, height: scaleSize(48), backgroundColor: '#E2E4E8' }} />
-          <View style={{ alignItems: 'center', width: scaleSize(112) }}>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>38</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('minutes')}</Text>
-          </View>
-          <View style={{ width: 1, height: scaleSize(48), backgroundColor: '#E2E4E8' }} />
-          <View style={{ alignItems: 'center', width: scaleSize(112) }}>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>6</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('domains')}</Text>
-          </View>
-        </View>
-
         <View style={[styles.overviewCard, { padding: scaleSize(16), borderRadius: scaleSize(24), borderWidth: 1, borderColor: 'rgba(83, 91, 216, 0.21)' }]}>
           <View style={[styles.overviewHeader, { paddingBottom: scaleSize(12) }]}>
             <Text style={[styles.overviewTitle, { fontSize: scaleSize(14) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
@@ -299,7 +282,7 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
             <CourageIcon width={scaleSize(28)} height={scaleSize(28)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#BB853E' }]}>{t('thatTookCourage')}</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#535BD8' }]}>{t('thatTookCourage')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>
               {t('thankYouForShowingUp', { name: childName })}
             </Text>
@@ -311,7 +294,7 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
             <LockIcon width={scaleSize(28)} height={scaleSize(28)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#BB853E' }]}>{t('responsesSavedSecurely')}</Text>
+            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#535BD8' }]}>{t('responsesSavedSecurely')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>{t('encryptedPrivateAndYours')}</Text>
           </View>
         </View>
@@ -328,6 +311,7 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
               date,
               screener,
               domainBreakdown,
+              domainAnswers: screening?.domainAnswers,
             })
           }
           style={({ pressed }) => [

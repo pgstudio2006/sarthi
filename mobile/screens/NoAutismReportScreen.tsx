@@ -15,7 +15,7 @@ import { useScreening } from '../context/ScreeningContext';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
-import { generateScreeningReportPDF } from '../utils/reportPdf';
+import { generateScreeningReportPDF, getResultColors, buildDomainTopInsights } from '../utils/reportPdf';
 import Svg, { Line, Circle, Path, Rect, Text as SvgText, G } from 'react-native-svg';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
 import CalendarIcon from '../assets/figma/screen28/calendar_month.svg';
@@ -232,7 +232,7 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
     "How often does the child have difficulty following a moving object with their eyes?",
     "How often does the child look at objects in unusual ways?",
     "How often does the child seem to feel little or no pain after getting hurt?",
-    "How often does the child smell, touch, or taste people or objects in unusual ways?"
+    "How often does child repeatedly smell objects, put things in their mouth, or frequently touch people?"
   ],
   Cognitive: [
     "How often does the child have difficulty staying focused on an activity?",
@@ -306,6 +306,12 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
     : resultLower.includes('severe')
     ? 'severeResultDescription'
     : 'mildResultDescription';
+
+  const resultColors = useMemo(() => getResultColors(result), [result]);
+  const dynamicInsights = useMemo(() => {
+    const built = buildDomainTopInsights(domainBreakdown, previousScore);
+    return built.length ? built : INSIGHTS;
+  }, [domainBreakdown, previousScore]);
 
   const getStatusKey = (status: string) => {
     const lower = (status ?? '').toLowerCase();
@@ -415,22 +421,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
   const [expandedLearnMore, setExpandedLearnMore] = useState<number | null>(0);
 
   const handleShare = async () => {
-    try {
-      const shareResult = await Share.share({
-        message: t('shareReportMessage', { name: childName, result: t(resultLabelKey), score: String(score), total: String(total), date }),
-      });
-      if (shareResult.action === Share.sharedAction) {
-        if (shareResult.activityType) {
-          // shared with activity type
-        } else {
-          // shared
-        }
-      } else if (shareResult.action === Share.dismissedAction) {
-        // dismissed
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
+    await generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'share');
   };
 
   const [domainTab, setDomainTab] = useState<Record<string, 'attention' | 'strengths'>>(() => {
@@ -479,9 +470,9 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
                 <Text style={[styles.scoreValue, { fontSize: scaleSize(20) }]}>{score} / {total}</Text>
                 <Text style={[styles.scoreAsterisk, { fontSize: scaleSize(14) }]}> *</Text>
               </View>
-              <View style={[styles.resultBadge, { backgroundColor: '#E8F7F0', borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), marginTop: scaleSize(6) }]}>
-                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#1A7340" color="#1A7340" />
-                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#1A7340', marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
+              <View style={[styles.resultBadge, { backgroundColor: resultColors.bg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), marginTop: scaleSize(6), borderWidth: 1, borderColor: resultColors.border }]}>
+                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={resultColors.fill} color={resultColors.fill} />
+                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: resultColors.text, marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
               </View>
             </View>
           </View>
@@ -544,12 +535,12 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
 
         <View style={[styles.summaryCard, { paddingVertical: scaleSize(18), paddingHorizontal: scaleSize(16), borderRadius: scaleSize(20) }]}>
           <View style={styles.summaryHeader}>
-            <View style={[styles.summaryIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: '#1A7340' }]}>
-              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} fill="#FFF" color="#FFF" />
+            <View style={[styles.summaryIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: resultColors.bg }]}>
+              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} fill={resultColors.fill} color={resultColors.fill} />
             </View>
             <View style={{ marginLeft: scaleSize(12), flex: 1 }}>
-              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: '#1A7340' }]}>{t('screeningResult')}</Text>
-              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: '#1A7340' }]}>{t(resultLabelKey)}</Text>
+              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: resultColors.text }]}>{t('screeningResult')}</Text>
+              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: resultColors.text }]}>{t(resultLabelKey)}</Text>
               <Text style={[styles.summaryScore, { fontSize: scaleSize(12), marginTop: scaleSize(2) }]}>{score} / {total}</Text>
             </View>
           </View>
@@ -631,7 +622,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
         <View style={{ position: 'relative' }}>
           <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('topInsights')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: scaleSize(12) }}>
-          {INSIGHTS.map((insight, index) => {
+          {dynamicInsights.map((insight, index) => {
             const { Icon } = insight;
             const isExpanded = expandedInsight === index;
             return (
@@ -746,11 +737,6 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
               {isExpanded && item.body && (
                 <Text style={[styles.learnMoreBody, { fontSize: scaleSize(12), marginTop: scaleSize(10) }]}>{item.body}</Text>
               )}
-              {isExpanded && !item.body && (
-                <View style={[styles.askButton, { marginTop: scaleSize(10), flexDirection: 'row', alignItems: 'center', gap: scaleSize(6) }]}>
-                  <Text style={[styles.askButtonText, { fontSize: scaleSize(12) }]}>{t('askSaarathiCare')} →</Text>
-                </View>
-              )}
             </Pressable>
           );
         })}
@@ -759,7 +745,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
       <View style={[styles.footer, { paddingHorizontal: padding, paddingBottom: scaleSize(16) }]}>
         <View style={styles.footerRow}>
           <Pressable
-            onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers })}
+            onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'download')}
             style={({ pressed }) => [styles.downloadBtn, { height: scaleSize(52), borderRadius: scaleSize(26), flex: 1, opacity: pressed ? 0.9 : 1 }]}
           >
             <Text style={[styles.downloadBtnText, { fontSize: scaleSize(16) }]}>{t('downloadReport')}</Text>

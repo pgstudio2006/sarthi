@@ -17,8 +17,8 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
         secondaryOptions: ['Special Educator', 'Shadow Teacher'],
         secondaryDefault: 'Shadow Teacher',
         finalLabel: 'School or institute name',
-        finalPlaceholder: 'Xyz',
-        finalDefault: 'Xyz',
+        finalPlaceholder: '',
+        finalDefault: '',
         nextRoute: 'DoctorProfile',
         nextButtonLabel: 'Continue',
         layout: {

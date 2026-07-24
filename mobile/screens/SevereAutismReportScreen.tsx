@@ -14,7 +14,7 @@ import { useScreening } from '../context/ScreeningContext';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
-import { generateScreeningReportPDF } from '../utils/reportPdf';
+import { generateScreeningReportPDF, getResultColors, buildDomainTopInsights } from '../utils/reportPdf';
 import ProgressRing from '../components/ProgressRing';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
 import CalendarIcon from '../assets/figma/screen28/calendar_month.svg';
@@ -26,6 +26,7 @@ import ChevronDown from '../assets/figma/screen28/Frame-4.svg';
 import ChevronUp from '../assets/figma/screen28/Frame-6.svg';
 import CheckmarkIcon from '../assets/figma/screen28/Checkmark1.png';
 import ResultFlagIcon from '../assets/figma/screen28/Frame-10.svg';
+import PersonIcon from '../assets/figma/screen27/Frame-7.svg';
 import { getDynamicFAQs } from '../utils/qaLogic';
 import { getAiFaqs, AiFaq } from '../api/client';
 
@@ -230,7 +231,7 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
     "How often does the child have difficulty following a moving object with their eyes?",
     "How often does the child look at objects in unusual ways?",
     "How often does the child seem to feel little or no pain after getting hurt?",
-    "How often does the child smell, touch, or taste people or objects in unusual ways?"
+    "How often does child repeatedly smell objects, put things in their mouth, or frequently touch people?"
   ],
   Cognitive: [
     "How often does the child have difficulty staying focused on an activity?",
@@ -287,8 +288,8 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
     return lower.replace(/\s+/g, '');
   };
 
-  const severityColor = '#A83B3B';
-  const severityBg = '#FDF0F0';
+  const resultColors = useMemo(() => getResultColors(result), [result]);
+  const dynamicInsights = useMemo(() => buildDomainTopInsights(domainBreakdown), [domainBreakdown]);
 
   // Answers source: route params or context
   const contextAnswers = screening?.domainAnswers || {};
@@ -397,22 +398,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
   };
 
   const handleShare = async () => {
-    try {
-      const shareResult = await Share.share({
-        message: t('shareReportMessage', { name: childName, result: t(resultLabelKey), score: String(score), total: String(total), date }),
-      });
-      if (shareResult.action === Share.sharedAction) {
-        if (shareResult.activityType) {
-          // shared with activity type
-        } else {
-          // shared
-        }
-      } else if (shareResult.action === Share.dismissedAction) {
-        // dismissed
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
+    await generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'share');
   };
 
   const reportPriorityDomains = useMemo(
@@ -453,7 +439,10 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           <View style={styles.overviewMetaRow}>
             <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} />
             <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(6) }]}>{date}</Text>
-            <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(16) }]}>{screener}</Text>
+            <View style={{ marginLeft: scaleSize(16), flexDirection: 'row', alignItems: 'center' }}>
+              <PersonIcon width={scaleSize(16)} height={scaleSize(16)} fill="#6B7180" color="#6B7180" />
+              <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(6) }]}>{screener}</Text>
+            </View>
           </View>
 
           <View style={styles.scoreRow}>
@@ -463,15 +452,15 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                 <Text style={[styles.scoreValue, { fontSize: scaleSize(20) }]}>{score} / {total}</Text>
                 <Text style={[styles.scoreAsterisk, { fontSize: scaleSize(14) }]}> *</Text>
               </View>
-              <View style={[styles.resultBadge, { backgroundColor: severityColor, borderColor: severityColor, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#FFF" color="#FFF" />
-                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#FFF', marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
+              <View style={[styles.resultBadge, { backgroundColor: resultColors.bg, borderColor: resultColors.border, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
+                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={resultColors.fill} color={resultColors.fill} />
+                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: resultColors.text, marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
               </View>
             </View>
           </View>
 
           <View style={[styles.progressTrack, { height: scaleSize(8), borderRadius: scaleSize(4), marginTop: scaleSize(12) }]}>
-            <View style={{ width: `${progress * 100}%`, height: scaleSize(8), borderRadius: scaleSize(4), backgroundColor: severityColor }} />
+            <View style={{ width: `${progress * 100}%`, height: scaleSize(8), borderRadius: scaleSize(4), backgroundColor: resultColors.fill }} />
           </View>
 
           <View style={[styles.domainGrid, { marginTop: scaleSize(16), gap: scaleSize(12) }]}>
@@ -493,7 +482,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                            size={ringSize}
                            strokeWidth={ringThickness}
                            progress={progressVal}
-                           color={severityColor}
+                           color={domain.ringColor}
                          />
                          <View style={[styles.domainCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2, backgroundColor: domain.color }]}>
                            <Icon width={scaleSize(28)} height={scaleSize(28)} />
@@ -536,7 +525,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                            size={ringSize}
                            strokeWidth={ringThickness}
                            progress={progressVal}
-                           color={severityColor}
+                           color={domain.ringColor}
                          />
                          <View style={[styles.domainCircle, { width: circleSize, height: circleSize, borderRadius: circleSize / 2, backgroundColor: domain.color }]}>
                            <Icon width={scaleSize(28)} height={scaleSize(28)} />
@@ -568,16 +557,18 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           </Text>
         </View>
 
-        <View style={[styles.summaryCard, { padding: scaleSize(16), borderRadius: scaleSize(20), backgroundColor: severityBg }]}>
+        <View style={[styles.summaryCard, { padding: scaleSize(16), borderRadius: scaleSize(20), backgroundColor: resultColors.bg }]}>
           <View style={styles.summaryHeader}>
-            <StarIcon width={scaleSize(24)} height={scaleSize(24)} />
+            <View style={[styles.summaryIconBox, { width: scaleSize(48), height: scaleSize(48), borderRadius: scaleSize(12), backgroundColor: resultColors.bg, justifyContent: 'center', alignItems: 'center' }]}>
+              <ResultFlagIcon width={scaleSize(24)} height={scaleSize(24)} fill={resultColors.fill} color={resultColors.fill} />
+            </View>
             <View style={{ marginLeft: scaleSize(12) }}>
-              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: severityColor }]}>{t('screeningResult')}</Text>
-              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: severityColor }]}>{t(resultLabelKey)}</Text>
+              <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: resultColors.text }]}>{t('screeningResult')}</Text>
+              <Text style={[styles.summaryTitle, { fontSize: scaleSize(18), color: resultColors.text }]}>{t(resultLabelKey)}</Text>
               <Text style={[styles.summaryScore, { fontSize: scaleSize(12), marginTop: scaleSize(2) }]}>{score} / {total}</Text>
             </View>
           </View>
-          <View style={[styles.summaryDivider, { marginVertical: scaleSize(12), backgroundColor: `${severityColor}20` }]} />
+          <View style={[styles.summaryDivider, { marginVertical: scaleSize(12), backgroundColor: resultColors.border }]} />
           <Text style={[styles.summaryBody, { fontSize: scaleSize(12) }]}>
             {t(resultDescKey, { name: childName })}
           </Text>
@@ -594,7 +585,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
         </View>
 
         <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('topInsights')}</Text>
-        {INSIGHTS.map((insight) => {
+        {dynamicInsights.map((insight) => {
           const { Icon } = insight;
           return (
             <View key={insight.title} style={[styles.insightCard, { padding: scaleSize(14), borderRadius: scaleSize(16) }]}>
@@ -727,9 +718,6 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                     <Text style={[styles.faqBody, { fontSize: scaleSize(12), lineHeight: scaleSize(18) }]}>
                       {faq.body}
                     </Text>
-                    <Pressable>
-                      <Text style={[styles.faqCta, { fontSize: scaleSize(12) }]}>{t('askSaarathiCare')} →</Text>
-                    </Pressable>
                   </View>
                 )}
               </Pressable>
@@ -740,7 +728,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
 
       <View style={[styles.footer, { paddingHorizontal: padding, paddingBottom: scaleSize(16) }]}>
         <Pressable
-          onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers })}
+          onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'download')}
           style={({ pressed }) => [styles.primaryButton, { height: scaleSize(54), borderRadius: scaleSize(26), opacity: pressed ? 0.9 : 1 }]}
         >
           <DownloadIcon width={scaleSize(20)} height={scaleSize(20)} />
@@ -791,6 +779,7 @@ const styles = StyleSheet.create({
   disclaimer: { fontFamily: 'Inter_400Regular', color: '#6B7180' },
   summaryCard: { gap: 0 },
   summaryHeader: { flexDirection: 'row', alignItems: 'center' },
+  summaryIconBox: { justifyContent: 'center', alignItems: 'center' },
   summaryEyebrow: { fontFamily: 'Inter_700Bold', letterSpacing: 0.5 },
   summaryTitle: { fontFamily: 'Inter_800ExtraBold' },
   summaryScore: { fontFamily: 'Inter_700Bold', color: '#6B7180' },

@@ -18,7 +18,7 @@ import Svg, { Line, Circle, Path, Rect, Text as SvgText, G } from 'react-native-
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
-import { generateScreeningReportPDF } from '../utils/reportPdf';
+import { generateScreeningReportPDF, getResultColors, buildDomainTopInsights } from '../utils/reportPdf';
 import ProgressRing from '../components/ProgressRing';
 import GradientBorderCard from '../components/GradientBorderCard';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
@@ -32,6 +32,7 @@ import ChevronUp from '../assets/figma/screen28/Frame-6.svg';
 import Article1Icon from '../assets/figma/screen28/Frame-2.svg';
 import CheckmarkIcon from '../assets/figma/screen28/Checkmark1.png';
 import StarIcon from '../assets/figma/screen28/kid_star.svg';
+import PersonIcon from '../assets/figma/screen27/Frame-7.svg';
 
 import SocialIcon from '../assets/figma/screen28/Frame-7.svg';
 import EmotionIcon from '../assets/figma/screen28/Frame-5.svg';
@@ -214,7 +215,7 @@ const ARTICLES = [
     title: 'Suggested strategies to improve sensory issues',
     Icon: SensoryIcon,
     body: 'Autism is a neurodevelopmental difference that affects how a person communicates, interacts with others, and experiences the world. It is present from early childhood, though signs may become noticeable at different ages. Every autistic person is unique, with their own strengths, challenges, and support needs.',
-    cta: 'Ask Saarathi Care →',
+    cta: '',
   },
   {
     title: 'What are the suggested next steps?',
@@ -275,7 +276,7 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
     "How often does the child have difficulty following a moving object with their eyes?",
     "How often does the child look at objects in unusual ways?",
     "How often does the child seem to feel little or no pain after getting hurt?",
-    "How often does the child smell, touch, or taste people or objects in unusual ways?"
+    "How often does child repeatedly smell objects, put things in their mouth, or frequently touch people?"
   ],
   Cognitive: [
     "How often does the child have difficulty staying focused on an activity?",
@@ -321,6 +322,8 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     : resultLower.includes('severe')
     ? 'severeResultDescription'
     : 'mildResultDescription';
+
+  const resultColors = useMemo(() => getResultColors(result), [result]);
 
   const getStatusKey = (status: string) => {
     const lower = (status ?? '').toLowerCase();
@@ -474,146 +477,8 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
   const insightSnap = cardWidth + insightGap;
 
   const dynamicInsights = useMemo(() => {
-    if (!domainBreakdown || domainBreakdown.length === 0) {
-      return [
-        {
-          title: 'Social Interaction',
-          heading: 'Social communication is developing',
-          status: 'Doing well',
-          statusColor: '#1A7340',
-          statusBg: '#E8F7F0',
-          color: '#9651C8',
-          Icon: SocialIcon,
-          bullets: [
-            'Responds to name and makes eye contact occasionally.',
-            'Encourage more interactive turn-taking games.',
-            'Practice social play in structured environments.'
-          ],
-        },
-        {
-          title: 'Speech & Language',
-          heading: 'Language development guidance',
-          status: 'Needs support',
-          statusColor: '#D97706',
-          statusBg: '#FEF3C7',
-          color: '#3B8DBD',
-          Icon: SpeechIcon,
-          bullets: [
-            'Expressive vocabulary is developing slowly.',
-            'Use visual schedules and pictures to prompt speech.',
-            'Sing songs and repeat common words during playtime.'
-          ],
-        },
-        {
-          title: 'Behavioural Patterns',
-          heading: 'Routines and play patterns',
-          status: 'Doing well',
-          statusColor: '#1A7340',
-          statusBg: '#E8F7F0',
-          color: '#D66A8E',
-          Icon: BehaviorIcon,
-          bullets: [
-            'Adapts well to structured daily routines.',
-            'Introduce slight changes in play to support flexibility.',
-            'Provide sensory-friendly items during transitions.'
-          ],
-        }
-      ];
-    }
-
-    const cards: any[] = [];
-
-    // 1. Social Card
-    const socialDb = domainBreakdown.find((b: any) => b.key === 'Social');
-    if (socialDb) {
-      const needsSupport = (socialDb.status ?? '').toLowerCase().includes('need') || Number(socialDb.score || 0) > (Number(socialDb.maxScore || 0) * 0.4);
-      cards.push({
-        title: 'Social Interaction',
-        heading: needsSupport ? 'Social interaction needs support' : 'Social interaction is on track',
-        status: socialDb.status,
-        statusColor: socialDb.statusColor || (needsSupport ? '#D97706' : '#1A7340'),
-        statusBg: socialDb.statusBg || (needsSupport ? '#FEF3C7' : '#E8F7F0'),
-        color: '#9651C8',
-        Icon: SocialIcon,
-        bullets: needsSupport
-          ? [
-              'Shows occasional avoidance of eye contact and direct social interaction.',
-              'Focus on structured one-on-one activities to ease social anxiety.',
-              'Use simple gestures and facial expressions to prompt reciprocal responses.'
-            ]
-          : [
-              'Comfortably responds to smiles and joins others in play.',
-              'Continue supporting interactive play with children of similar age.',
-              'Celebrate their positive interactions and social engagement.'
-            ]
-      });
-    }
-
-    // 2. Speech Card
-    const speechDb = domainBreakdown.find((b: any) => b.key === 'Speech');
-    const prevSpeechDb = previousScore?.domainBreakdown?.find((b: any) => b.key === 'Speech');
-    if (speechDb) {
-      const needsSupport = (speechDb.status ?? '').toLowerCase().includes('need') || Number(speechDb.score || 0) > (Number(speechDb.maxScore || 0) * 0.4);
-      const isImproved = prevSpeechDb ? Number(speechDb.score || 0) < Number(prevSpeechDb.score || 0) : false;
-      cards.push({
-        title: 'Speech & Language',
-        heading: isImproved
-          ? 'Speech and language is improving'
-          : needsSupport
-          ? 'Communication channels need support'
-          : 'Speech & language is on track',
-        status: speechDb.status,
-        statusColor: speechDb.statusColor || (needsSupport ? '#D97706' : '#1A7340'),
-        statusBg: speechDb.statusBg || (needsSupport ? '#FEF3C7' : '#E8F7F0'),
-        color: '#3B8DBD',
-        Icon: SpeechIcon,
-        bullets: isImproved
-          ? [
-              'Positive reduction in speech delay markers since the last screening.',
-              'Consistent therapy and home practice are producing positive outcomes.',
-              'Continue language modeling and labeling everyday items.'
-            ]
-          : needsSupport
-          ? [
-              'Speech delay signals or repetitive sounds observed.',
-              'Incorporate visual cards and options to help express immediate needs.',
-              'Read books together and highlight keywords with emphasis.'
-            ]
-          : [
-              'Meets language and verbal expression milestones appropriately.',
-              'Encourage complex sentences and back-and-forth storytelling.',
-              'Involve them in interactive conversation during regular routines.'
-            ]
-      });
-    }
-
-    // 3. Behavior Card
-    const behaviorDb = domainBreakdown.find((b: any) => b.key === 'Behavior');
-    if (behaviorDb) {
-      const needsSupport = (behaviorDb.status ?? '').toLowerCase().includes('need') || Number(behaviorDb.score || 0) > (Number(behaviorDb.maxScore || 0) * 0.4);
-      cards.push({
-        title: 'Behavioral Patterns',
-        heading: needsSupport ? 'Repetitive patterns need guidance' : 'Daily behaviors are well-balanced',
-        status: behaviorDb.status,
-        statusColor: behaviorDb.statusColor || (needsSupport ? '#D97706' : '#1A7340'),
-        statusBg: behaviorDb.statusBg || (needsSupport ? '#FEF3C7' : '#E8F7F0'),
-        color: '#D66A8E',
-        Icon: BehaviorIcon,
-        bullets: needsSupport
-          ? [
-              'Repetitive movements or high attachment to routines observed.',
-              'Use visual timetables to provide structure and ease transition stress.',
-              'Introduce tiny modifications to their favorite routines gradually.'
-            ]
-          : [
-              'Adapts easily to changes and plays flexibly with toys.',
-              'Provide safe and diverse play environments to expand interests.',
-              'Encourage imaginative pretend play to build creative flexibility.'
-            ]
-      });
-    }
-
-    return cards;
+    const built = buildDomainTopInsights(domainBreakdown, previousScore);
+    return built.length ? built : INSIGHTS;
   }, [domainBreakdown, previousScore]);
 
   const completedCount = route?.params?.completedCount ?? (isRepeat ? 2 : 1);
@@ -650,22 +515,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
   const [openReportFaq, setOpenReportFaq] = useState<number | null>(0);
 
   const handleShare = async () => {
-    try {
-      const shareResult = await Share.share({
-        message: t('shareReportMessage', { name: childName, result: t(resultLabelKey), score: String(score), total: String(total), date }),
-      });
-      if (shareResult.action === Share.sharedAction) {
-        if (shareResult.activityType) {
-          // shared with activity type
-        } else {
-          // shared
-        }
-      } else if (shareResult.action === Share.dismissedAction) {
-        // dismissed
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
+    await generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'share');
   };
 
   return (
@@ -705,6 +555,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                 <Text style={[styles.metaText, { fontSize: scaleSize(12) }]}>{date}</Text>
               </View>
               <View style={styles.metaItem}>
+                <PersonIcon width={scaleSize(16)} height={scaleSize(16)} fill="#6B7180" color="#6B7180" />
                 <Text style={[styles.metaText, { fontSize: scaleSize(12) }]}>{screener}</Text>
               </View>
             </View>
@@ -717,9 +568,9 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                 {score} / {total} <Text style={{ color: '#6B7180' }}>*</Text>
               </Text>
             </View>
-            <View style={[styles.resultBadge, { borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#BB853E" color="#BB853E" />
-              <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12) }]}>{t(resultLabelKey)}</Text>
+            <View style={[styles.resultBadge, { borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), backgroundColor: resultColors.bg, borderWidth: 1, borderColor: resultColors.border }]}>
+              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={resultColors.fill} color={resultColors.fill} />
+              <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: resultColors.text }]}>{t(resultLabelKey)}</Text>
             </View>
           </View>
 
@@ -782,8 +633,8 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
 
         <View style={[styles.resultCard, { padding: scaleSize(14), borderRadius: scaleSize(20) }]}>
           <View style={styles.resultCardHeader}>
-            <View style={[styles.resultIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14) }]}>
-              <FlagIcon width={scaleSize(28)} height={scaleSize(28)} />
+            <View style={[styles.resultIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: resultColors.bg }]}>
+              <FlagIcon width={scaleSize(28)} height={scaleSize(28)} fill={resultColors.fill} color={resultColors.fill} />
             </View>
             <View style={styles.resultCardTitles}>
               <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10) }]}>{t('screeningResult')}</Text>
@@ -1139,9 +990,6 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
                         <Text style={[styles.learnMoreBodyText, { fontSize: scaleSize(12), lineHeight: scaleSize(16) }]}>
                           {faq.body}
                         </Text>
-                        <Pressable style={styles.learnMoreCta}>
-                          <Text style={[styles.learnMoreCtaText, { fontSize: scaleSize(12) }]}>{t('askSaarathiCare')} →</Text>
-                        </Pressable>
                       </View>
                     )}
                   </View>
@@ -1154,7 +1002,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
 
       <View style={[styles.footer, { paddingHorizontal: padding, paddingBottom: scaleSize(16) }]}>
         <Pressable
-          onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers })}
+          onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'download')}
           style={({ pressed }) => [styles.primaryButton, { height: scaleSize(54), borderRadius: scaleSize(27), opacity: pressed ? 0.9 : 1 }]}
         >
           <DownloadIcon width={scaleSize(20)} height={scaleSize(20)} />

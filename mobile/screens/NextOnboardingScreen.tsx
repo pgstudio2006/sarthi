@@ -17,8 +17,8 @@ export default function NextOnboardingScreen({ navigation }: { navigation: any }
         secondaryOptions: ['Behaviour Therapy', 'Occupational Therapy', 'Speech Therapy'],
         secondaryDefault: 'Speech Therapy',
         finalLabel: 'Therapy centre',
-        finalPlaceholder: 'Bumblebee child care',
-        finalDefault: 'Bumblebee child care',
+        finalPlaceholder: '',
+        finalDefault: '',
         nextRoute: 'Welcome',
         nextButtonLabel: 'Continue',
       }}

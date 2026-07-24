@@ -73,24 +73,24 @@ const ROLE_CONFIG: Record<string, {
     secondaryLabelKey: 'speciality',
     secondaryOptions: ['Behaviour Therapy', 'Occupational Therapy', 'Speech Therapy'],
     finalLabelKey: 'therapyCentre',
-    finalPlaceholder: 'Bumblebee child care',
+    finalPlaceholder: '',
   },
   Teacher: {
     secondaryLabelKey: 'role',
     secondaryOptions: ['Special Educator', 'Shadow Teacher'],
     finalLabelKey: 'schoolOrInstituteName',
-    finalPlaceholder: 'Xyz',
+    finalPlaceholder: '',
   },
   Doctor: {
     secondaryLabelKey: 'role',
     secondaryOptions: ['General Pediatric', 'Developmental Pediatrician', 'Pediatric Neurologist', 'Child Psychiatrist', 'Other'],
     finalLabelKey: 'hospitalOrClinicName',
-    finalPlaceholder: 'Xyz',
+    finalPlaceholder: '',
   },
   Others: {
     secondaryOptions: [],
     finalLabelKey: 'yourRelationship',
-    finalPlaceholder: 'Xyz',
+    finalPlaceholder: '',
   },
 };
 

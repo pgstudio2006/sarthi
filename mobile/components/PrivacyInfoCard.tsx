@@ -16,6 +16,8 @@ export default function PrivacyInfoCard({
   paddingVertical,
   messageWeight = 'semiBold',
   titleColor,
+  borderWidth,
+  borderColor,
 }: {
   icon?: React.ReactNode;
   message?: string;
@@ -28,6 +30,8 @@ export default function PrivacyInfoCard({
   paddingVertical?: number;
   messageWeight?: 'regular' | 'semiBold';
   titleColor?: string;
+  borderWidth?: number;
+  borderColor?: string;
 }) {
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
@@ -45,6 +49,8 @@ export default function PrivacyInfoCard({
       paddingVertical: resolvedPaddingVertical * scale,
       gap: icon ? 4 * scale : 0,
       justifyContent: textAlign === 'center' ? 'center' : 'flex-start',
+      borderWidth: borderWidth ? borderWidth * scale : undefined,
+      borderColor: borderColor ? borderColor : undefined,
     }]}>
       {icon && (
         <View style={[styles.icon, { width: iconSize * scale, height: iconSize * scale }]}>{icon}</View>

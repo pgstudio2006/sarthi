@@ -26,25 +26,25 @@ const CONFIG: Record<string, {
     secondaryLabel: 'Speciality',
     secondaryOptions: ['Behaviour Therapy', 'Occupational Therapy', 'Speech Therapy'],
     finalLabel: 'Therapy Centre',
-    finalPlaceholder: 'Bumblebee child care',
+    finalPlaceholder: '',
   },
   Teacher: {
     secondaryLabel: 'Role',
     secondaryOptions: ['Special Educator', 'Shadow Teacher'],
     finalLabel: 'School or Institute Name',
-    finalPlaceholder: 'Xyz',
+    finalPlaceholder: '',
   },
   Doctor: {
     secondaryLabel: 'Role',
     secondaryOptions: ['General Pediatric', 'Developmental Pediatrician', 'Pediatric Neurologist', 'Child Psychiatrist', 'Other'],
     finalLabel: 'Hospital or Clinic Name',
-    finalPlaceholder: 'Xyz',
+    finalPlaceholder: '',
   },
   Others: {
     secondaryLabel: '',
     secondaryOptions: [],
     finalLabel: 'Your Relationship',
-    finalPlaceholder: 'Xyz',
+    finalPlaceholder: '',
   },
 };
 

@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
+import { useScreening } from '../context/ScreeningContext';
 import ProgressRing from '../components/ProgressRing';
 import LogoIcon from '../assets/logo.svg';
 import CloseIcon from '../assets/figma/screen27/Frame-11.svg';
@@ -41,6 +42,7 @@ const DOMAINS = [
 export default function NoAutismCompletionScreen({ navigation, route }: any) {
   const { scaleSize, padding } = useResponsive();
   const { t } = useTranslation();
+  const screening = useScreening();
 
   const childName = route?.params?.childName ?? 'Nitya';
   const score = route?.params?.score ?? 60;
@@ -91,6 +93,7 @@ export default function NoAutismCompletionScreen({ navigation, route }: any) {
       date,
       screener,
       domainBreakdown,
+      domainAnswers: screening?.domainAnswers,
       isRepeat,
       previousScore,
     });
@@ -135,23 +138,6 @@ export default function NoAutismCompletionScreen({ navigation, route }: any) {
           <Text style={[styles.celebrationSub, { fontSize: scaleSize(14) }]}>
             {t('screeningCompleteForName', { name: childName })}
           </Text>
-        </View>
-
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: scaleSize(0), backgroundColor: '#fff', borderRadius: scaleSize(16), borderWidth: 1, borderColor: '#E2E4E8', paddingVertical: scaleSize(16) }}>
-          <View style={{ alignItems: 'center', width: scaleSize(112) }}>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>40</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('questionsLabel')}</Text>
-          </View>
-          <View style={{ width: 1, height: scaleSize(48), backgroundColor: '#E2E4E8' }} />
-          <View style={{ alignItems: 'center', width: scaleSize(112) }}>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>38</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('minutes')}</Text>
-          </View>
-          <View style={{ width: 1, height: scaleSize(48), backgroundColor: '#E2E4E8' }} />
-          <View style={{ alignItems: 'center', width: scaleSize(112) }}>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold', fontSize: scaleSize(20), color: '#18182D' }}>6</Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(11), color: '#6B7180', marginTop: scaleSize(2) }}>{t('domains')}</Text>
-          </View>
         </View>
 
         <View style={[styles.overviewCard, { padding: scaleSize(16), borderRadius: scaleSize(24), borderWidth: 1, borderColor: 'rgba(83, 91, 216, 0.21)' }]}>
@@ -346,7 +332,7 @@ const styles = StyleSheet.create({
   infoTitle: { fontFamily: 'Inter_700Bold', color: '#18182D' },
   infoBody: { fontFamily: 'Inter_400Regular', color: '#6B7180', lineHeight: 18 },
   courageCard: { backgroundColor: 'rgba(243, 242, 255, 0.6)', flexDirection: 'row', alignItems: 'center', gap: 12 },
-  courageTitle: { fontFamily: 'Inter_700Bold', color: '#1A7340' },
+  courageTitle: { fontFamily: 'Inter_700Bold', color: '#535BD8' },
   lockCard: { backgroundColor: 'rgba(243, 242, 255, 0.6)', flexDirection: 'row', alignItems: 'center', gap: 12 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.white, gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F0F0F0' },
   primaryCta: { backgroundColor: colors.primaryBlue, justifyContent: 'center', alignItems: 'center' },

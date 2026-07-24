@@ -14,7 +14,7 @@ import { useScreening } from '../context/ScreeningContext';
 import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
-import { generateScreeningReportPDF } from '../utils/reportPdf';
+import { generateScreeningReportPDF, buildDomainTopInsights } from '../utils/reportPdf';
 import ProgressRing from '../components/ProgressRing';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
 import CalendarIcon from '../assets/figma/screen28/calendar_month.svg';
@@ -231,7 +231,7 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
     "How often does the child have difficulty following a moving object with their eyes?",
     "How often does the child look at objects in unusual ways?",
     "How often does the child seem to feel little or no pain after getting hurt?",
-    "How often does the child smell, touch, or taste people or objects in unusual ways?",
+    "How often does child repeatedly smell objects, put things in their mouth, or frequently touch people?",
   ],
   Cognitive: [
     "How often does the child have difficulty staying focused on an activity?",
@@ -378,6 +378,8 @@ export default function ModerateAutismReportScreen({ navigation, route }: any) {
     }),
   [domainBreakdown, domainAnswers]);
 
+  const dynamicInsights = useMemo(() => buildDomainTopInsights(domainBreakdown), [domainBreakdown]);
+
   const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
   const [domainTab, setDomainTab] = useState<Record<string, 'attention' | 'strengths'>>(() => {
     const init: Record<string, 'attention' | 'strengths'> = {};
@@ -389,13 +391,7 @@ export default function ModerateAutismReportScreen({ navigation, route }: any) {
   const toggleDomain = (key: string) => setExpandedDomain((p) => (p === key ? null : key));
 
   const handleShare = async () => {
-    try {
-      await Share.share({
-        message: t('shareReportMessage', { name: childName, result: t(resultLabelKey), score: String(score), total: String(total), date }),
-      });
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    }
+    await generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'share');
   };
 
   const reportPriorityDomains = useMemo(
@@ -547,7 +543,7 @@ export default function ModerateAutismReportScreen({ navigation, route }: any) {
 
         {/* Top Insights */}
         <Text style={[styles.sectionTitle, { fontSize: scaleSize(16) }]}>{t('topInsights')}</Text>
-        {INSIGHTS.map((insight) => {
+        {dynamicInsights.map((insight) => {
           const { Icon } = insight;
           return (
             <View key={insight.title} style={[styles.insightCard, { padding: scaleSize(14), borderRadius: scaleSize(16) }]}>
@@ -687,7 +683,7 @@ export default function ModerateAutismReportScreen({ navigation, route }: any) {
       <View style={[styles.footer, { paddingHorizontal: padding, paddingBottom: scaleSize(16) }]}>
         <Pressable
           style={({ pressed }) => [styles.primaryButton, { height: scaleSize(54), borderRadius: scaleSize(26), opacity: pressed ? 0.9 : 1 }]}
-          onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers })}
+          onPress={() => generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'download')}
         >
           <DownloadIcon width={scaleSize(20)} height={scaleSize(20)} />
           <Text style={[styles.primaryButtonText, { fontSize: scaleSize(15) }]}>{t('downloadReport')}</Text>
