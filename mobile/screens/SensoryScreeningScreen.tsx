@@ -14,6 +14,7 @@ import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
 import { useLanguage } from '../context/LanguageContext';
 import { useScreening } from '../context/ScreeningContext';
+import { playSound } from '../utils/sounds';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
 import PauseIcon from '../assets/figma/screen18/motion_photos_paused.svg';
 import SectionProgressWidget from '../components/SectionProgressWidget';
@@ -95,6 +96,7 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
   const positionsRef = useRef<number[]>([]);
 
   const handleSelect = useCallback((questionIndex: number, optionIndex: number) => {
+    playSound('option');
     setAnswers((prev) => {
       const next = [...prev];
       next[questionIndex] = optionIndex;
@@ -275,7 +277,12 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
           <BackArrow width={scaleSize(12)} height={scaleSize(21)} />
         </Pressable>
         <Pressable
-          onPress={() => allAnswered && navigation.navigate('CognitiveScreening')}
+          onPress={() => {
+                if (allAnswered) {
+                  playSound('domainComplete');
+                  navigation.navigate('CognitiveScreening');
+                }
+              }}
           style={[
             styles.continueButton,
             {

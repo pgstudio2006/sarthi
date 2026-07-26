@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ScreeningProvider } from './context/ScreeningContext';
+import { initSounds } from './utils/sounds';
 import SplashScreen from './screens/SplashScreen';
 import LanguageSelectionScreen from './screens/LanguageSelectionScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -64,6 +65,7 @@ export default function App() {
   useEffect(() => {
     NavigationBar.setBackgroundColorAsync('#FFFFFF').catch(() => {});
     NavigationBar.setButtonStyleAsync('dark').catch(() => {});
+    initSounds().catch(() => {});
   }, []);
 
   if (!fontsLoaded || !authReady) {
