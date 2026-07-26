@@ -444,9 +444,9 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
       questions.forEach((qText, index) => {
         const answer = answers[index];
         if (answer !== null && answer !== undefined) {
-          // If answer is 2, 3, or 4 (Often, Most, Always), it's an attention area.
-          // If answer is 0 or 1 (Rarely, Sometimes), it's a strength / area working well.
-          if (answer >= 2) {
+          // If answer is 1, 2, 3, or 4 (Sometimes, Often, Most, Always), it's an attention area.
+          // If answer is 0 (Rarely), it's a strength / area working well.
+          if (answer >= 1) {
             attention.push(qText);
           } else {
             strengths.push(qText);

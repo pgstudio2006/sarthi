@@ -357,7 +357,7 @@ export default function ModerateAutismReportScreen({ navigation, route }: any) {
         questions.forEach((qText, idx) => {
           const answer = answers[idx];
           if (answer !== null && answer !== undefined) {
-            if (answer >= 2) {
+            if (answer >= 1) {
               attention.push(qText);
             } else {
               strengths.push(qText);

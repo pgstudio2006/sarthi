@@ -622,8 +622,17 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
             </Pressable>
           </View>
 
-          {latestCompletedSession && !continueProgress ? (
+          {latestCompletedSession ? (
             <View style={{ paddingHorizontal: padding, gap: scaleSize(16), marginTop: scaleSize(16) }}>
+              {continueProgress && (
+                <HeroCard
+                  onPress={handleContinue}
+                  onContinue={handleContinue}
+                  onStartNew={handleStartNew}
+                  progress={continueProgress}
+                  childName={child?.name || t('yourChild')}
+                />
+              )}
 
               {/* Re-screen banner */}
               {daysSinceLastScreening !== null && daysSinceLastScreening >= RESCREEN_INTERVAL_DAYS && (

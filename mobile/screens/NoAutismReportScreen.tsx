@@ -396,7 +396,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
       questions.forEach((qText, index) => {
         const answer = answers[index];
         if (answer !== null && answer !== undefined) {
-          if (answer >= 2) {
+          if (answer >= 1) {
             attention.push(qText);
           } else {
             strengths.push(qText);
