@@ -23,5 +23,8 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
+# Install prisma CLI for migrations
+RUN npx prisma version
+
 EXPOSE 3000
-CMD ["sh", "-c", "DATABASE_URL=$(printf '%s' \"$DATABASE_URL\" | sed 's/^postgres:/postgresql:/'); npx prisma db push --accept-data-loss && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
