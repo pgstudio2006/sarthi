@@ -54,6 +54,10 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
   const date = route?.params?.date ?? '';
   const screener = route?.params?.screener ?? t('caregiver');
   const domainBreakdown = route?.params?.domainBreakdown;
+  const isRepeat = route?.params?.isRepeat ?? false;
+  const previousScore = route?.params?.previousScore ?? null;
+  const childId = route?.params?.childId ?? screening?.childId;
+  const completedCount = route?.params?.completedCount ?? (isRepeat ? 2 : 1);
   const progress = Math.min(1, Math.max(0, score / total));
 
   const resultLower = result.toLowerCase();
@@ -118,7 +122,7 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
       label: meta.label,
       Icon: meta.Icon,
       color: meta.color,
-      ringColor: breakdown?.statusColor ?? meta.ringColor,
+      ringColor: meta.ringColor,
     };
   });
 
@@ -186,7 +190,7 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
               </Text>
             </View>
             <View style={[styles.resultBadge, { borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-              <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#BB853E" color="#BB853E" />
+              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} color="#BB853E" />
               <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12) }]}>{t(resultLabelKey)}</Text>
             </View>
           </View>
@@ -251,7 +255,7 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
         <View style={[styles.resultCard, { padding: scaleSize(16), borderRadius: scaleSize(20) }]}>
           <View style={styles.resultCardHeader}>
             <View style={[styles.resultIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14) }]}>
-              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} />
+              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} color="#FFF" />
             </View>
             <View style={styles.resultCardTitles}>
               <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10) }]}>{t('screeningResult')}</Text>
@@ -305,6 +309,7 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
           onPress={() =>
             navigation.navigate('ScreeningReport', {
               childName,
+              childId,
               score,
               total,
               result,
@@ -312,6 +317,9 @@ export default function ScreeningCompletionScreen({ navigation, route }: any) {
               screener,
               domainBreakdown,
               domainAnswers: screening?.domainAnswers,
+              isRepeat,
+              previousScore,
+              completedCount,
             })
           }
           style={({ pressed }) => [

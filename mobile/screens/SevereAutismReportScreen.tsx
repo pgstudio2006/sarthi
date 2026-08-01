@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ScrollView,
   View,
@@ -27,8 +27,7 @@ import ChevronUp from '../assets/figma/screen28/Frame-6.svg';
 import CheckmarkIcon from '../assets/figma/screen28/Checkmark1.png';
 import ResultFlagIcon from '../assets/figma/screen28/Frame-10.svg';
 import PersonIcon from '../assets/figma/screen27/Frame-7.svg';
-import { getDynamicFAQs } from '../utils/qaLogic';
-import { getAiFaqs, AiFaq } from '../api/client';
+import { useReportFAQs } from '../utils/useReportFAQs';
 
 import SocialIcon from '../assets/figma/screen28/Frame-7.svg';
 import EmotionIcon from '../assets/figma/screen28/Frame-5.svg';
@@ -254,7 +253,8 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
   const screener = route?.params?.screener ?? '';
   const domainBreakdown = route?.params?.domainBreakdown;
   const completedCount = route?.params?.completedCount ?? (route?.params?.isRepeat ? 2 : 1);
-  const childId = route?.params?.childId ?? '';
+  const isRepeat = route?.params?.isRepeat ?? (completedCount > 1);
+  const childId = route?.params?.childId ?? screening?.childId ?? '';
   const progress = Math.min(1, Math.max(0, Number(score || 0) / Number(total || 1)));
 
   const resultLower = result.toLowerCase();
@@ -330,7 +330,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === d.key);
       if (bd) {
-        return { ...d, progress: bd.progress, ringColor: bd.statusColor };
+        return { ...d, progress: bd.progress };
       }
     }
     return d;
@@ -363,7 +363,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
       questions.forEach((qText, index) => {
         const answer = answers[index];
         if (answer !== null && answer !== undefined) {
-          if (answer >= 1) {
+          if (answer >= 2) {
             attention.push(qText);
           } else {
             strengths.push(qText);
@@ -401,24 +401,36 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
     await generateScreeningReportPDF({ childName, score, total, result, date, screener, domainBreakdown, domainAnswers }, 'share');
   };
 
-  const reportPriorityDomains = useMemo(
-    () => domainsDetailWithScore.map(d => d.key),
-    [domainsDetailWithScore]
-  );
-  const [reportFAQs, setReportFAQs] = useState<AiFaq[]>(() =>
-    getDynamicFAQs(completedCount, false, reportPriorityDomains)
-  );
-  useEffect(() => {
-    let mounted = true;
-    if (!childId) return;
-    getAiFaqs(childId).then((res) => {
-      if (!mounted) return;
-      if (res.success && res.data.faqs.length === 10 && res.data.mode !== 'generic') {
-        setReportFAQs(res.data.faqs);
-      }
-    });
-    return () => { mounted = false; };
-  }, [childId, completedCount, reportPriorityDomains]);
+  const previousScore = route?.params?.previousScore;
+
+  const faqInput = useMemo(() => {
+    const domains = domainBreakdown
+      ? domainBreakdown.map((bd: any) => {
+          const detail = domainsDetailWithScore.find((d) => d.key === bd.key);
+          return {
+            key: bd.key,
+            label: detail?.label || bd.key,
+            score: bd.score ?? 0,
+            maxScore: bd.maxScore ?? 45,
+            status: bd.status,
+            attention: detail?.attention || [],
+            strengths: detail?.strengths || [],
+          };
+        })
+      : [];
+    return {
+      childName,
+      score,
+      total,
+      result,
+      completedCount,
+      isRepeat,
+      previousScore,
+      domains,
+    };
+  }, [childName, score, total, result, completedCount, isRepeat, previousScore, domainBreakdown, domainsDetailWithScore]);
+
+  const reportFAQs = useReportFAQs(faqInput, childId);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -437,10 +449,12 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
         <View style={[styles.overviewCard, { padding: scaleSize(16), borderRadius: scaleSize(24), borderWidth: 1, borderColor: 'rgba(83, 91, 216, 0.21)' }]}>
           <Text style={[styles.overviewTitle, { fontSize: scaleSize(16) }]}>{t('screeningOverviewForName', { name: childName })}</Text>
           <View style={styles.overviewMetaRow}>
-            <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} color="#6B7180" />
-            <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(6) }]}>{date}</Text>
-            <View style={{ marginLeft: scaleSize(16), flexDirection: 'row', alignItems: 'center' }}>
-              <PersonIcon width={scaleSize(16)} height={scaleSize(16)} fill="#6B7180" color="#6B7180" />
+            <View style={styles.metaItem}>
+              <CalendarIcon width={scaleSize(16)} height={scaleSize(16)} color="#6B7180" />
+              <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(6) }]}>{date}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <PersonIcon width={scaleSize(16)} height={scaleSize(16)} />
               <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12), marginLeft: scaleSize(6) }]}>{screener}</Text>
             </View>
           </View>
@@ -453,7 +467,7 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
                 <Text style={[styles.scoreAsterisk, { fontSize: scaleSize(14) }]}> *</Text>
               </View>
               <View style={[styles.resultBadge, { backgroundColor: resultColors.bg, borderColor: resultColors.border, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={resultColors.fill} color={resultColors.fill} />
+                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} color={resultColors.fill} />
                 <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: resultColors.text, marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
               </View>
             </View>
@@ -462,6 +476,10 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           <View style={[styles.progressTrack, { height: scaleSize(8), borderRadius: scaleSize(4), marginTop: scaleSize(12) }]}>
             <View style={{ width: `${progress * 100}%`, height: scaleSize(8), borderRadius: scaleSize(4), backgroundColor: resultColors.fill }} />
           </View>
+
+          <Text style={[styles.disclaimer, { fontSize: scaleSize(11), marginTop: scaleSize(12) }]}>
+            {t('scoreDisclaimer')}
+          </Text>
 
           <View style={[styles.domainGrid, { marginTop: scaleSize(16), gap: scaleSize(12) }]}>
             <View style={styles.domainRow}>
@@ -559,8 +577,8 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
 
         <View style={[styles.summaryCard, { padding: scaleSize(16), borderRadius: scaleSize(20), backgroundColor: resultColors.bg }]}>
           <View style={styles.summaryHeader}>
-            <View style={[styles.summaryIconBox, { width: scaleSize(48), height: scaleSize(48), borderRadius: scaleSize(12), backgroundColor: resultColors.bg, justifyContent: 'center', alignItems: 'center' }]}>
-              <ResultFlagIcon width={scaleSize(24)} height={scaleSize(24)} fill={resultColors.fill} color={resultColors.fill} />
+            <View style={[styles.summaryIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: resultColors.fill, justifyContent: 'center', alignItems: 'center' }]}>
+              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} color="#FFFFFF" />
             </View>
             <View style={{ marginLeft: scaleSize(12) }}>
               <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: resultColors.text }]}>{t('screeningResult')}</Text>
@@ -618,26 +636,24 @@ export default function SevereAutismReportScreen({ navigation, route }: any) {
           const tab = domainTab[domain.key];
           const items = tab === 'attention' ? domain.attention : domain.strengths;
           return (
-            <View key={domain.key} style={[styles.domainCard, { padding: scaleSize(14), borderRadius: scaleSize(16), borderColor: expanded ? domain.color : '#E2E4E8' }]}>
+            <View key={domain.key} style={[styles.domainCard, { padding: scaleSize(14), borderRadius: scaleSize(16), borderColor: expanded ? domain.color : 'rgba(0,0,0,0.08)' }]}>
               <Pressable onPress={() => toggleDomain(domain.key)} style={styles.domainCardHeader}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <View style={[styles.domainCardIconBox, { width: scaleSize(40), height: scaleSize(40), borderRadius: scaleSize(12), backgroundColor: domain.color }]}>
-                    <Icon width={scaleSize(20)} height={scaleSize(20)} />
+                  <View style={[styles.domainCardIconBox, { width: scaleSize(32), height: scaleSize(32), borderRadius: scaleSize(9), backgroundColor: domain.color }]}>
+                    <Icon width={scaleSize(18)} height={scaleSize(18)} />
                   </View>
-                  <View style={{ marginLeft: scaleSize(12), flex: 1 }}>
-                    <Text style={[styles.domainCardLabel, { fontSize: scaleSize(14) }]}>{domain.label}</Text>
-                    <Text style={[styles.domainCardScore, { fontSize: scaleSize(12) }]}>{t('score')} · {domain.score}</Text>
-                  </View>
+                  <Text style={[styles.domainCardLabel, { fontSize: scaleSize(15), marginLeft: scaleSize(12) }]}>{domain.label}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }}>
                   <View style={[styles.statusBadge, { backgroundColor: domain.statusBg, borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3) }]}>
                     <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: domain.statusColor }]}>{t(getStatusKey(domain.status))}</Text>
                   </View>
+                  <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(13), color: '#2D2A3A' }}>{domain.score}</Text>
                   {expanded ? <ChevronUp width={scaleSize(18)} height={scaleSize(18)} /> : <ChevronDown width={scaleSize(18)} height={scaleSize(18)} />}
                 </View>
               </Pressable>
               {expanded && (
-                <View style={{ marginTop: scaleSize(12), paddingTop: scaleSize(12), borderTopWidth: 1, borderTopColor: '#E2E4E8', gap: scaleSize(10) }}>
+                <View style={{ marginTop: scaleSize(12), paddingTop: scaleSize(12), borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', gap: scaleSize(10) }}>
                   <View style={styles.domainTabs}>
                     <Pressable
                       onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'attention' }))}
@@ -752,9 +768,10 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: 'Inter_700Bold', color: '#18182D' },
   datePill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F2FF' },
   dateText: { fontFamily: 'Inter_600SemiBold', color: '#535BD8' },
-  overviewCard: { backgroundColor: '#F3F2FF', gap: 8 },
+  overviewCard: { backgroundColor: colors.white, gap: 8 },
   overviewTitle: { fontFamily: 'Inter_700Bold', color: '#2D2A3A' },
-  overviewMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  overviewMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   overviewMetaText: { fontFamily: 'Inter_400Regular', color: '#6B7180' },
   scoreRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   scoreLabelRow: { flexDirection: 'row', alignItems: 'baseline' },
@@ -798,7 +815,7 @@ const styles = StyleSheet.create({
   statusBadge: { justifyContent: 'center', alignItems: 'center' },
   statusBadgeText: { fontFamily: 'Inter_700Bold' },
   bullet: { fontFamily: 'Inter_400Regular', color: '#454545', lineHeight: 18 },
-  domainCard: { backgroundColor: '#F8F8FF', borderWidth: 1, borderColor: '#E2E4E8' },
+  domainCard: { backgroundColor: colors.white, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' },
   domainCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   domainCardIconBox: { justifyContent: 'center', alignItems: 'center' },
   domainCardLabel: { fontFamily: 'Inter_700Bold', color: '#18182D' },

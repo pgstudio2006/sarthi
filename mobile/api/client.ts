@@ -333,6 +333,16 @@ export async function startScreening(
   });
 }
 
+export async function saveProgress(
+  sessionId: string,
+  responses: ScreeningResponseInput[]
+): Promise<ApiResponse<void>> {
+  return request(`/screening/${sessionId}/responses`, {
+    method: 'POST',
+    body: JSON.stringify({ responses }),
+  });
+}
+
 export async function submitScreening(
   sessionId: string,
   responses: ScreeningResponseInput[]

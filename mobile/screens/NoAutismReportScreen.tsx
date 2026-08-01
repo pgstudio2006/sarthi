@@ -16,6 +16,7 @@ import { colors } from '../theme/colors';
 import { useResponsive } from '../utils/responsive';
 import { useTranslation } from '../i18n';
 import { generateScreeningReportPDF, getResultColors, buildDomainTopInsights } from '../utils/reportPdf';
+import { useReportFAQs } from '../utils/useReportFAQs';
 import Svg, { Line, Circle, Path, Rect, Text as SvgText, G } from 'react-native-svg';
 import BackArrow from '../assets/figma/screen18/Vector.svg';
 import CalendarIcon from '../assets/figma/screen28/calendar_month.svg';
@@ -177,15 +178,6 @@ const DEVELOPMENT_DOMAINS = [
   },
 ];
 
-const LEARN_MORE = [
-  {
-    title: 'Suggested strategies to improve sensory issues',
-    expanded: true,
-    body: 'Autism is a neurodevelopmental difference that affects how a person communicates, interacts with others, and experiences the world. It is present from early childhood, though signs may become noticeable at different ages. Every autistic person is unique, with their own strengths, challenges, and support needs.',
-  },
-  { title: 'What are the suggested next steps?', expanded: false },
-  { title: 'What type of doctors should I visit?', expanded: false },
-];
 
 const DOMAIN_QUESTIONS: Record<string, string[]> = {
   Social: [
@@ -257,6 +249,8 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
   const domainBreakdown = route?.params?.domainBreakdown;
   const isRepeat = route?.params?.isRepeat ?? false;
   const previousScore = route?.params?.previousScore ?? null;
+  const completedCount = route?.params?.completedCount ?? (isRepeat ? 2 : 1);
+  const childId = screening?.childId ?? route?.params?.childId ?? '';
   const progress = Math.min(1, Math.max(0, Number(score || 0) / Number(total || 1)));
 
   const prevScoreVal = previousScore?.totalScore != null ? Number(previousScore.totalScore) : undefined;
@@ -363,7 +357,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === d.key);
       if (bd) {
-        return { ...d, progress: bd.progress, ringColor: bd.statusColor };
+        return { ...d, progress: bd.progress };
       }
     }
     return d;
@@ -396,7 +390,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
       questions.forEach((qText, index) => {
         const answer = answers[index];
         if (answer !== null && answer !== undefined) {
-          if (answer >= 1) {
+          if (answer >= 2) {
             attention.push(qText);
           } else {
             strengths.push(qText);
@@ -415,6 +409,35 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
       strengths: strengths.length > 0 ? strengths : (answers.length > 0 ? [] : d.strengths),
     };
   });
+
+  const faqInput = useMemo(() => {
+    const domains = domainBreakdown
+      ? domainBreakdown.map((bd: any) => {
+          const detail = domainsDetailWithScore.find((d) => d.key === bd.key);
+          return {
+            key: bd.key,
+            label: detail?.label || bd.key,
+            score: bd.score ?? 0,
+            maxScore: bd.maxScore ?? 45,
+            status: bd.status,
+            attention: detail?.attention || [],
+            strengths: detail?.strengths || [],
+          };
+        })
+      : [];
+    return {
+      childName,
+      score,
+      total,
+      result,
+      completedCount,
+      isRepeat,
+      previousScore,
+      domains,
+    };
+  }, [childName, score, total, result, completedCount, isRepeat, previousScore, domainBreakdown, domainsDetailWithScore]);
+
+  const reportFAQs = useReportFAQs(faqInput, childId);
 
   const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
   const [expandedInsight, setExpandedInsight] = useState<number | null>(null);
@@ -471,7 +494,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
                 <Text style={[styles.scoreAsterisk, { fontSize: scaleSize(14) }]}> *</Text>
               </View>
               <View style={[styles.resultBadge, { backgroundColor: resultColors.bg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), marginTop: scaleSize(6), borderWidth: 1, borderColor: resultColors.border }]}>
-                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={resultColors.fill} color={resultColors.fill} />
+                <ResultFlagIcon width={scaleSize(14)} height={scaleSize(14)} color={resultColors.fill} />
                 <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: resultColors.text, marginLeft: scaleSize(4) }]}>{t(resultLabelKey)}</Text>
               </View>
             </View>
@@ -536,7 +559,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
         <View style={[styles.summaryCard, { paddingVertical: scaleSize(18), paddingHorizontal: scaleSize(16), borderRadius: scaleSize(20) }]}>
           <View style={styles.summaryHeader}>
             <View style={[styles.summaryIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: resultColors.bg }]}>
-              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} fill={resultColors.fill} color={resultColors.fill} />
+              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} color={resultColors.fill} />
             </View>
             <View style={{ marginLeft: scaleSize(12), flex: 1 }}>
               <Text style={[styles.summaryEyebrow, { fontSize: scaleSize(10), color: resultColors.text }]}>{t('screeningResult')}</Text>
@@ -571,6 +594,67 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
                 const yFor = (val: number) => scaleSize(120) - ((val - minScore) / (maxScore - minScore)) * scaleSize(90);
                 const y0 = yFor(prevScoreVal ?? 0);
                 const y1 = yFor(currentScoreVal);
+
+                const renderMarker = (bx: number, by: number, title: string, scoreVal: number, badgeColor: string) => {
+                  const minBadgeW = scaleSize(48);
+                  const textW = title.length * scaleSize(5.5) + scaleSize(24);
+                  const badgeW = Math.max(minBadgeW, textW);
+                  const badgeH = scaleSize(30);
+                  const gap = scaleSize(8);
+                  const minTop = scaleSize(4);
+                  let badgeY = by - badgeH - gap;
+                  let pointerDown = true;
+                  if (badgeY < minTop) {
+                    badgeY = by + gap;
+                    pointerDown = false;
+                  }
+                  const badgeX = Math.max(badgeW / 2 + scaleSize(4), Math.min(bx, chartW - badgeW / 2 - scaleSize(4)));
+                  return (
+                    <G>
+                      <Rect
+                        x={badgeX - badgeW / 2}
+                        y={badgeY}
+                        width={badgeW}
+                        height={badgeH}
+                        rx={scaleSize(6)}
+                        ry={scaleSize(6)}
+                        fill={badgeColor}
+                      />
+                      <SvgText
+                        x={badgeX}
+                        y={badgeY + scaleSize(11)}
+                        fill='#FFFFFF'
+                        fontSize={scaleSize(8)}
+                        fontFamily='Inter_700Bold'
+                        textAnchor='middle'
+                      >
+                        {title}
+                      </SvgText>
+                      <SvgText
+                        x={badgeX}
+                        y={badgeY + scaleSize(22)}
+                        fill='#FFFFFF'
+                        fontSize={scaleSize(10)}
+                        fontFamily='Inter_700Bold'
+                        textAnchor='middle'
+                      >
+                        {scoreVal}
+                      </SvgText>
+                      {pointerDown ? (
+                        <Path
+                          d={`M ${badgeX - scaleSize(3)} ${badgeY + badgeH} L ${badgeX + scaleSize(3)} ${badgeY + badgeH} L ${bx} ${by} Z`}
+                          fill={badgeColor}
+                        />
+                      ) : (
+                        <Path
+                          d={`M ${badgeX - scaleSize(3)} ${badgeY} L ${badgeX + scaleSize(3)} ${badgeY} L ${bx} ${by} Z`}
+                          fill={badgeColor}
+                        />
+                      )}
+                    </G>
+                  );
+                };
+
                 return (
                   <G>
                     {[0.25, 0.5, 0.75].map((ratio) => (
@@ -580,16 +664,18 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
                         y1={scaleSize(30) + ratio * scaleSize(90)}
                         x2={chartW - scaleSize(35)}
                         y2={scaleSize(30) + ratio * scaleSize(90)}
-                        stroke="#E2E4E8"
+                        stroke='#E2E4E8'
                         strokeWidth={1}
-                        strokeDasharray="4 4"
+                        strokeDasharray='4 4'
                       />
                     ))}
                     <Line x1={x0} y1={y0} x2={x1} y2={y1} stroke={isImproved ? '#1A7340' : '#E25648'} strokeWidth={3} />
-                    <Circle cx={x0} cy={y0} r={4} fill="#535BD8" />
+                    <Circle cx={x0} cy={y0} r={4} fill='#535BD8' />
                     <Circle cx={x1} cy={y1} r={4} fill={isImproved ? '#1A7340' : '#E25648'} />
-                    <SvgText x={x0} y={scaleSize(140)} fill="#9E9EA0" fontSize={scaleSize(10)} textAnchor="middle">{prevDateStr.split(' ').slice(0, 2).join(' ')}</SvgText>
-                    <SvgText x={x1} y={scaleSize(140)} fill={isImproved ? '#1A7340' : '#E25648'} fontSize={scaleSize(10)} fontWeight="bold" textAnchor="middle">{date.split(' ').slice(0, 2).join(' ')}</SvgText>
+                    <SvgText x={x0} y={scaleSize(140)} fill='#9E9EA0' fontSize={scaleSize(10)} textAnchor='middle'>{prevDateStr.split(' ').slice(0, 2).join(' ')}</SvgText>
+                    <SvgText x={x1} y={scaleSize(140)} fill={isImproved ? '#1A7340' : '#E25648'} fontSize={scaleSize(10)} fontFamily='Inter_700Bold' textAnchor='middle'>{date.split(' ').slice(0, 2).join(' ')}</SvgText>
+                    {renderMarker(x0, y0, t('test1'), prevScoreVal ?? 0, '#535BD8')}
+                    {renderMarker(x1, y1, t('test2'), currentScoreVal, isImproved ? '#1A7340' : '#E25648')}
                   </G>
                 );
               })()}
@@ -597,10 +683,7 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
 
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: trendStatusBg, borderRadius: scaleSize(12), padding: scaleSize(12), marginTop: scaleSize(8), gap: scaleSize(8) }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isImproved ? '#1A7340' : '#E25648', borderRadius: scaleSize(8), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(4), gap: scaleSize(2) }}>
-                <Svg width={scaleSize(10)} height={scaleSize(10)} viewBox="0 0 10 10">
-                  <Path d={isImproved ? "M2 8L5 2L8 8" : "M2 2L5 8L8 2"} stroke="#FFFFFF" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                </Svg>
-                <Text style={{ color: '#FFFFFF', fontSize: scaleSize(11), fontFamily: 'Inter_700Bold' }}>{isImproved ? `-${percentChange}%` : `+${percentChange}%`}</Text>
+                <Text style={{ color: '#FFFFFF', fontSize: scaleSize(11), fontFamily: 'Inter_700Bold' }}>{isImproved ? '↓' : '↑'} {isImproved ? `-${percentChange}%` : `+${percentChange}%`}</Text>
               </View>
               <Text style={{ fontSize: scaleSize(12), color: '#18182D', fontFamily: 'Inter_600SemiBold', flex: 1 }}>{isImproved ? t('improvement') : t('needsAttentionLowercase')} {t('since')} {prevDateStr}</Text>
             </View>
@@ -659,68 +742,86 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
           <Text style={[styles.sectionSubtitle, { fontSize: scaleSize(12) }]}>{t('tapAnyDomain')}</Text>
         </View>
 
-        {domainsDetailWithScore.map((domain) => {
-          const { Icon } = domain;
-          const expanded = expandedDomain === domain.key;
-          return (
-            <Pressable key={domain.key} onPress={() => toggleDomain(domain.key)} style={[styles.domainCard, { paddingVertical: scaleSize(14), paddingHorizontal: scaleSize(16), borderRadius: scaleSize(16), borderColor: expanded ? domain.color : '#E2E4E8' }]}>
-              <View style={styles.domainCardHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View style={[styles.domainCardIconBox, { width: scaleSize(32), height: scaleSize(32), borderRadius: scaleSize(9), backgroundColor: domain.color }]}>
-                    <Icon width={scaleSize(20)} height={scaleSize(20)} />
-                  </View>
-                  <Text style={[styles.domainCardLabel, { fontSize: scaleSize(16), marginLeft: scaleSize(12) }]}>{domain.label}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }}>
-                  <View style={[styles.statusBadge, { backgroundColor: domain.statusBg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-                    <Text style={[styles.statusBadgeText, { fontSize: scaleSize(11), color: domain.statusColor }]}>{t(getStatusKey(domain.status))}</Text>
-                  </View>
-                  <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(13), color: '#2D2A3A' }}>{domain.score}</Text>
-                  <ChevronDown width={scaleSize(16)} height={scaleSize(16)} style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }} />
-                </View>
-              </View>
-              {expanded && (
-                <View style={{ marginTop: scaleSize(12), gap: scaleSize(10) }}>
-                  <View style={{ flexDirection: 'row', gap: scaleSize(8), marginBottom: scaleSize(4) }}>
-                    <Pressable
-                      onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'attention' }))}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6), paddingHorizontal: scaleSize(12), paddingVertical: scaleSize(8), borderRadius: scaleSize(24), backgroundColor: domainTab[domain.key] === 'attention' ? '#535BD8' : '#F3F2FF' }}
-                    >
-                      <WarningIcon width={scaleSize(14)} height={scaleSize(14)} />
-                      <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(12), color: domainTab[domain.key] === 'attention' ? '#FFFFFF' : '#2D2A3A' }}>{t('attentionAreas')} ({domain.attention.length})</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'strengths' }))}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6), paddingHorizontal: scaleSize(12), paddingVertical: scaleSize(8), borderRadius: scaleSize(24), backgroundColor: domainTab[domain.key] === 'strengths' ? '#1A7340' : '#F3F2FF' }}
-                    >
-                      <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
-                      <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(12), color: domainTab[domain.key] === 'strengths' ? '#FFFFFF' : '#2D2A3A' }}>{t('areasWorkingWell')} ({domain.strengths.length})</Text>
-                    </Pressable>
-                  </View>
-
-                  {domainTab[domain.key] === 'strengths' && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6) }}>
-                      <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
-                      <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(12), color: '#1A7340' }}>{t('heresWhatWorkingWell')}</Text>
+        <View style={[styles.domainList, { gap: scaleSize(12) }]}>
+          {domainsDetailWithScore.map((domain) => {
+            const { Icon } = domain;
+            const open = expandedDomain === domain.key;
+            const tab = domainTab[domain.key];
+            const items = tab === 'attention' ? domain.attention : domain.strengths;
+            return (
+              <View
+                key={domain.key}
+                style={[styles.domainCard, { padding: scaleSize(14), borderRadius: scaleSize(16), borderColor: open ? domain.color : 'rgba(0,0,0,0.08)' }]}
+              >
+                <Pressable onPress={() => toggleDomain(domain.key)} style={styles.domainCardHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={[styles.domainCardIconBox, { width: scaleSize(32), height: scaleSize(32), borderRadius: scaleSize(9), backgroundColor: domain.color }]}>
+                      <Icon width={scaleSize(18)} height={scaleSize(18)} />
                     </View>
-                  )}
-
-                  {(domainTab[domain.key] === 'attention' ? domain.attention : domain.strengths).map((item: string, idx: number) => (
-                    <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(10), padding: scaleSize(12), borderRadius: scaleSize(12), backgroundColor: domainTab[domain.key] === 'attention' ? '#F6F6F8' : '#E8F7F0' }}>
-                      <View style={[styles.numberCircle, { width: scaleSize(24), height: scaleSize(24), borderRadius: scaleSize(12), backgroundColor: domainTab[domain.key] === 'attention' ? domain.statusBg : '#FFFFFF' }]}>
-                        <Text style={[styles.numberText, { fontSize: scaleSize(11), color: domainTab[domain.key] === 'attention' ? domain.statusColor : '#1A7340' }]}>{idx + 1}</Text>
+                    <Text style={[styles.domainCardLabel, { fontSize: scaleSize(15), marginLeft: scaleSize(12) }]}>{domain.label}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(8) }}>
+                    <View style={[styles.statusBadge, { backgroundColor: domain.statusBg, borderRadius: scaleSize(10), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(3) }]}>
+                      <Text style={[styles.statusBadgeText, { fontSize: scaleSize(10), color: domain.statusColor }]}>{t(getStatusKey(domain.status))}</Text>
+                    </View>
+                    <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: scaleSize(13), color: '#2D2A3A' }}>{domain.score}</Text>
+                    {open ? <ChevronUp width={scaleSize(18)} height={scaleSize(18)} /> : <ChevronDown width={scaleSize(18)} height={scaleSize(18)} />}
+                  </View>
+                </Pressable>
+                {open && (
+                  <View style={[styles.domainDetails, { paddingTop: scaleSize(12) }]}>
+                    <View style={styles.domainTabs}>
+                      <Pressable
+                        onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'attention' }))}
+                        style={[styles.domainTab, tab === 'attention' && styles.domainTabActive]}
+                      >
+                        <WarningIcon width={scaleSize(14)} height={scaleSize(14)} />
+                        <Text style={styles.domainTabText}>{t('attentionAreas')} ({domain.attention.length})</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => setDomainTab((prev) => ({ ...prev, [domain.key]: 'strengths' }))}
+                        style={[styles.domainTab, tab === 'strengths' && styles.domainTabActive]}
+                      >
+                        <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
+                        <Text style={styles.domainTabText}>{t('areasWorkingWell')} ({domain.strengths.length})</Text>
+                      </Pressable>
+                    </View>
+                    {tab === 'strengths' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: scaleSize(6) }}>
+                        <StarIcon width={scaleSize(14)} height={scaleSize(14)} />
+                        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: scaleSize(12), color: '#1A7340' }}>{t('heresWhatWorkingWell')}</Text>
                       </View>
-                      <Text style={[styles.bulletText, { fontSize: scaleSize(12), flex: 1, lineHeight: scaleSize(18) }]}>{item}</Text>
+                    )}
+                    <View style={{ gap: scaleSize(10) }}>
+                      {items.map((item: string, idx: number) => (
+                        <View
+                          key={idx}
+                          style={[styles.bulletCard, { backgroundColor: tab === 'attention' ? '#F6F6F8' : '#E8F7F0' }]}
+                        >
+                          <View
+                            style={[
+                              styles.numberCircle,
+                              tab === 'attention'
+                                ? { backgroundColor: domain.statusBg }
+                                : { backgroundColor: '#FFFFFF' },
+                              { width: scaleSize(20), height: scaleSize(20), borderRadius: scaleSize(10) },
+                            ]}
+                          >
+                            <Text style={[styles.numberText, { fontSize: scaleSize(10), color: tab === 'attention' ? domain.statusColor : '#1A7340' }]}>{idx + 1}</Text>
+                          </View>
+                          <Text style={[styles.bulletText, { fontSize: scaleSize(12), lineHeight: scaleSize(18) }]}>{item}</Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
 
         <Text style={[styles.sectionTitle, { fontSize: scaleSize(16), marginTop: scaleSize(8) }]}>{t('learnMoreAboutChild')}</Text>
-        {LEARN_MORE.map((item, index) => {
+        {reportFAQs.map((item, index) => {
           const isExpanded = expandedLearnMore === index;
           return (
             <Pressable
@@ -812,16 +913,20 @@ const styles = StyleSheet.create({
   statusBadge: { justifyContent: 'center', alignItems: 'center' },
   statusBadgeText: { fontFamily: 'Inter_700Bold' },
   bullet: { fontFamily: 'Inter_400Regular', color: '#454545', lineHeight: 18 },
-  domainCard: { backgroundColor: '#F8F8FF', borderWidth: 1, borderColor: '#E2E4E8' },
+  domainList: {},
+  domainCard: { backgroundColor: colors.white, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' },
   domainCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   domainCardIconBox: { justifyContent: 'center', alignItems: 'center' },
   domainCardLabel: { fontFamily: 'Inter_700Bold', color: '#18182D' },
-  subTab: { justifyContent: 'center' },
-  subTabText: { fontFamily: 'Inter_600SemiBold' },
-  numberedItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  domainDetails: { borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)', gap: 12 },
+  domainTabs: { flexDirection: 'row', gap: 4, backgroundColor: '#F3F3F6', padding: 4, borderRadius: 30 },
+  domainTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: 'transparent', borderRadius: 23, paddingHorizontal: 10, paddingVertical: 8 },
+  domainTabActive: { backgroundColor: '#FFFFFF', borderRadius: 23, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 3 },
+  domainTabText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, color: '#2D2A3A' },
   numberCircle: { justifyContent: 'center', alignItems: 'center' },
   numberText: { fontFamily: 'Inter_700Bold' },
-  bulletText: { fontFamily: 'Inter_400Regular', color: '#454545', lineHeight: 18 },
+  bulletCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 12, padding: 12 },
+  bulletText: { flex: 1, fontFamily: 'Inter_400Regular', color: '#2D2A3A', lineHeight: 18 },
   learnMoreCard: { backgroundColor: '#F8F8FF', borderWidth: 1, borderColor: '#E2E4E8' },
   learnMoreHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   learnMoreTitle: { fontFamily: 'Inter_700Bold', color: '#18182D' },

@@ -1,6 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { getDynamicFAQs } from '../utils/qaLogic';
-import { getAiFaqs, AiFaq } from '../api/client';
+import React, { useState, useMemo } from 'react';
+import { useReportFAQs } from '../utils/useReportFAQs';
 import {
   ScrollView,
   View,
@@ -300,7 +299,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
   const date = route?.params?.date ?? '';
   const screener = route?.params?.screener ?? '';
   const domainBreakdown = route?.params?.domainBreakdown;
-  const childId = route?.params?.childId ?? '';
+  const childId = route?.params?.childId ?? screening?.childId ?? '';
   const progress = Math.min(1, Math.max(0, Number(score || 0) / Number(total || 1)));
 
   const resultLower = result.toLowerCase();
@@ -411,7 +410,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
     if (domainBreakdown) {
       const bd = domainBreakdown.find((b: any) => b.key === d.key);
       if (bd) {
-        return { ...d, progress: bd.progress, ringColor: bd.statusColor };
+        return { ...d, progress: bd.progress };
       }
     }
     return d;
@@ -444,9 +443,9 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
       questions.forEach((qText, index) => {
         const answer = answers[index];
         if (answer !== null && answer !== undefined) {
-          // If answer is 1, 2, 3, or 4 (Sometimes, Often, Most, Always), it's an attention area.
-          // If answer is 0 (Rarely), it's a strength / area working well.
-          if (answer >= 1) {
+          // If answer is 2, 3, or 4 (Often, Most of the times, Almost Always), it's an attention area.
+          // If answer is 0 or 1 (Rarely or Sometimes), it's a strength / area working well.
+          if (answer >= 2) {
             attention.push(qText);
           } else {
             strengths.push(qText);
@@ -482,27 +481,34 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
   }, [domainBreakdown, previousScore]);
 
   const completedCount = route?.params?.completedCount ?? (isRepeat ? 2 : 1);
-  const priorityDomains = useMemo(() => {
-    if (!domainBreakdown) return [];
-    return domainBreakdown
-      .filter((b: any) => (b.status ?? '').toLowerCase().includes('need'))
-      .map((b: any) => b.key);
-  }, [domainBreakdown]);
+  const faqInput = useMemo(() => {
+    const domains = domainBreakdown
+      ? domainBreakdown.map((bd: any) => {
+          const detail = domainsDetailWithScore.find((d) => d.key === bd.key);
+          return {
+            key: bd.key,
+            label: detail?.label || bd.key,
+            score: bd.score ?? 0,
+            maxScore: bd.maxScore ?? 45,
+            status: bd.status,
+            attention: detail?.attention || [],
+            strengths: detail?.strengths || [],
+          };
+        })
+      : [];
+    return {
+      childName,
+      score,
+      total,
+      result,
+      completedCount,
+      isRepeat,
+      previousScore,
+      domains,
+    };
+  }, [childName, score, total, result, completedCount, isRepeat, previousScore, domainBreakdown, domainsDetailWithScore]);
 
-  const [reportFAQs, setReportFAQs] = useState<AiFaq[]>(() =>
-    getDynamicFAQs(completedCount, false, priorityDomains)
-  );
-  useEffect(() => {
-    let mounted = true;
-    if (!childId) return;
-    getAiFaqs(childId).then((res) => {
-      if (!mounted) return;
-      if (res.success && res.data.faqs.length === 10 && res.data.mode !== 'generic') {
-        setReportFAQs(res.data.faqs);
-      }
-    });
-    return () => { mounted = false; };
-  }, [childId, completedCount, priorityDomains]);
+  const reportFAQs = useReportFAQs(faqInput, childId);
 
   const [domainTab, setDomainTab] = useState<Record<string, 'attention' | 'strengths'>>(() => {
     const initial: Record<string, 'attention' | 'strengths'> = {};
@@ -569,7 +575,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
               </Text>
             </View>
             <View style={[styles.resultBadge, { borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6), backgroundColor: resultColors.bg, borderWidth: 1, borderColor: resultColors.border }]}>
-              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} fill={resultColors.fill} color={resultColors.fill} />
+              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} color={resultColors.fill} />
               <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: resultColors.text }]}>{t(resultLabelKey)}</Text>
             </View>
           </View>
@@ -634,7 +640,7 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
         <View style={[styles.resultCard, { padding: scaleSize(14), borderRadius: scaleSize(20) }]}>
           <View style={styles.resultCardHeader}>
             <View style={[styles.resultIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: resultColors.bg }]}>
-              <FlagIcon width={scaleSize(28)} height={scaleSize(28)} fill={resultColors.fill} color={resultColors.fill} />
+              <FlagIcon width={scaleSize(28)} height={scaleSize(28)} color={resultColors.fill} />
             </View>
             <View style={styles.resultCardTitles}>
               <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10) }]}>{t('screeningResult')}</Text>
@@ -676,118 +682,109 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
               {/* SVG Trend Chart */}
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <Svg width={width - scaleSize(64)} height={scaleSize(200)}>
-                  {/* Draw Grid Lines & Y labels */}
-                  {[70, 90, 110, 130].map((val) => {
-                    const yVal = scaleSize(165) - ((val - 60) / 80) * scaleSize(120);
-                    return (
-                      <G key={val}>
-                        <Line
-                          x1={scaleSize(35)}
-                          y1={yVal}
-                          x2={width - scaleSize(84)}
-                          y2={yVal}
-                          stroke="#E2E4E8"
-                          strokeWidth={1}
-                          strokeDasharray="4 4"
-                        />
-                        <SvgText
-                          x={scaleSize(25)}
-                          y={yVal + 3}
-                          fill="#9E9EA0"
-                          fontSize={scaleSize(10)}
-                          textAnchor="end"
-                          fontFamily="Inter_500Medium"
-                        >
-                          {val}
-                        </SvgText>
-                      </G>
-                    );
-                  })}
-
-                  {/* X Coordinates */}
                   {(() => {
-                    const x0 = scaleSize(35);
-                    const plotW = (width - scaleSize(84)) - x0;
-                    const interval = plotW / 3;
-                    const x1 = x0 + interval;
-                    const x2 = x0 + 2 * interval;
-                    const x3 = x0 + plotW;
+                    const chartW = width - scaleSize(64);
+                    const chartH = scaleSize(200);
+                    const topPad = scaleSize(52);
+                    const bottomPad = scaleSize(44);
+                    const plotTop = topPad;
+                    const plotBottom = chartH - bottomPad;
+                    const plotH = plotBottom - plotTop;
+                    const x0 = scaleSize(56);
+                    const x1 = chartW - scaleSize(56);
+                    const rawPrev = prevScoreVal ?? currentScoreVal;
+                    const rawCurr = currentScoreVal;
+                    const scoreGap = 20;
+                    const minScore = Math.min(rawPrev, rawCurr) - scoreGap;
+                    const maxScore = Math.max(rawPrev, rawCurr) + scoreGap;
+                    const scoreRange = Math.max(1, maxScore - minScore);
+                    const yFor = (val: number) => plotBottom - ((val - minScore) / scoreRange) * plotH;
+                    const y0 = yFor(rawPrev);
+                    const y1 = yFor(rawCurr);
 
-                    const y0 = scaleSize(165) - ((92 - 60) / 80) * scaleSize(120);
-                    const y1 = scaleSize(165) - ((98 - 60) / 80) * scaleSize(120);
-                    const y2 = scaleSize(165) - (((prevScoreVal ?? 104) - 60) / 80) * scaleSize(120);
-                    const y3 = scaleSize(165) - (((currentScoreVal ?? 83) - 60) / 80) * scaleSize(120);
-
-                    const renderScoreBadge = (bx: number, by: number, title: string, scoreVal: number, badgeColor: string) => {
-                      const badgeW = scaleSize(40);
-                      const badgeH = scaleSize(24);
+                    const renderMarker = (bx: number, by: number, title: string, scoreVal: number, badgeColor: string) => {
+                      const minBadgeW = scaleSize(56);
+                      const textW = title.length * scaleSize(6) + scaleSize(30);
+                      const badgeW = Math.max(minBadgeW, textW);
+                      const badgeH = scaleSize(34);
+                      const gap = scaleSize(10);
+                      const minTop = scaleSize(8);
+                      let badgeY = by - badgeH - gap;
+                      let pointerDown = true;
+                      if (badgeY < minTop) {
+                        badgeY = by + gap;
+                        pointerDown = false;
+                      }
+                      const badgeX = Math.max(badgeW / 2 + scaleSize(6), Math.min(bx, chartW - badgeW / 2 - scaleSize(6)));
                       return (
                         <G>
                           <Rect
-                            x={bx - badgeW / 2}
-                            y={by - badgeH - scaleSize(10)}
+                            x={badgeX - badgeW / 2}
+                            y={badgeY}
                             width={badgeW}
                             height={badgeH}
-                            rx={scaleSize(6)}
-                            ry={scaleSize(6)}
+                            rx={scaleSize(8)}
+                            ry={scaleSize(8)}
                             fill={badgeColor}
                           />
                           <SvgText
-                            x={bx}
-                            y={by - badgeH - scaleSize(10) + scaleSize(8)}
-                            fill="#FFFFFF"
-                            fontSize={scaleSize(7)}
-                            fontWeight="bold"
-                            textAnchor="middle"
+                            x={badgeX}
+                            y={badgeY + scaleSize(13)}
+                            fill='#FFFFFF'
+                            fontSize={scaleSize(9)}
+                            fontFamily='Inter_700Bold'
+                            textAnchor='middle'
                           >
                             {title}
                           </SvgText>
                           <SvgText
-                            x={bx}
-                            y={by - badgeH - scaleSize(10) + scaleSize(18)}
-                            fill="#FFFFFF"
-                            fontSize={scaleSize(9)}
-                            fontWeight="bold"
-                            textAnchor="middle"
+                            x={badgeX}
+                            y={badgeY + scaleSize(26)}
+                            fill='#FFFFFF'
+                            fontSize={scaleSize(12)}
+                            fontFamily='Inter_700Bold'
+                            textAnchor='middle'
                           >
                             {scoreVal}
                           </SvgText>
-                          <Path
-                            d={`M ${bx - 3} ${by - scaleSize(10)} L ${bx + 3} ${by - scaleSize(10)} L ${bx} ${by - scaleSize(6)} Z`}
-                            fill={badgeColor}
-                          />
+                          {pointerDown ? (
+                            <Path
+                              d={`M ${badgeX - scaleSize(4)} ${badgeY + badgeH} L ${badgeX + scaleSize(4)} ${badgeY + badgeH} L ${bx} ${by} Z`}
+                              fill={badgeColor}
+                            />
+                          ) : (
+                            <Path
+                              d={`M ${badgeX - scaleSize(4)} ${badgeY} L ${badgeX + scaleSize(4)} ${badgeY} L ${bx} ${by} Z`}
+                              fill={badgeColor}
+                            />
+                          )}
                         </G>
                       );
                     };
 
                     return (
                       <G>
-                        {/* Connecting lines */}
-                        <Line x1={x0} y1={y0} x2={x1} y2={y1} stroke="#535BD8" strokeWidth={2} />
-                        <Line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#535BD8" strokeWidth={2} />
-                        <Line x1={x2} y1={y2} x2={x3} y2={y3} stroke={isImproved ? '#1A7340' : '#E25648'} strokeWidth={3} />
-
-                        {/* Dots */}
-                        <Circle cx={x0} cy={y0} r={3} fill="#535BD8" />
-                        <Circle cx={x1} cy={y1} r={3} fill="#535BD8" />
-                        
-                        <Circle cx={x2} cy={y2} r={5} fill="#535BD8" />
-                        <Circle cx={x2} cy={y2} r={8} stroke="rgba(83, 91, 216, 0.2)" strokeWidth={3} fill="none" />
-
-                        <Circle cx={x3} cy={y3} r={5} fill={isImproved ? '#1A7340' : '#E25648'} />
-                        <Circle cx={x3} cy={y3} r={8} stroke={isImproved ? 'rgba(26, 115, 64, 0.2)' : 'rgba(226, 86, 72, 0.2)'} strokeWidth={3} fill="none" />
-
-                        {/* X Axis Labels */}
-                        <SvgText x={x0} y={scaleSize(185)} fill="#9E9EA0" fontSize={scaleSize(10)} textAnchor="middle">Oct '25</SvgText>
-                        <SvgText x={x1} y={scaleSize(185)} fill="#9E9EA0" fontSize={scaleSize(10)} textAnchor="middle">Jan '26</SvgText>
-                        <SvgText x={x2} y={scaleSize(185)} fill="#535BD8" fontSize={scaleSize(10)} fontWeight="bold" textAnchor="middle">2 Jun</SvgText>
-                        <SvgText x={x3} y={scaleSize(185)} fill={isImproved ? '#1A7340' : '#E25648'} fontSize={scaleSize(10)} fontWeight="bold" textAnchor="middle">
-                          {date.split(' ').slice(0, 2).join(' ')}
-                        </SvgText>
-
-                        {/* Floating Badges */}
-                        {renderScoreBadge(x2, y2, t('test1'), prevScoreVal ?? 104, '#535BD8')}
-                        {renderScoreBadge(x3, y3, t('test2'), currentScoreVal ?? 83, isImproved ? '#1A7340' : '#E25648')}
+                        {[0.25, 0.5, 0.75].map((ratio) => (
+                          <Line
+                            key={ratio}
+                            x1={scaleSize(48)}
+                            y1={plotTop + ratio * plotH}
+                            x2={chartW - scaleSize(48)}
+                            y2={plotTop + ratio * plotH}
+                            stroke='#E2E4E8'
+                            strokeWidth={1}
+                            strokeDasharray='4 4'
+                          />
+                        ))}
+                        <Line x1={x0} y1={y0} x2={x1} y2={y1} stroke={isImproved ? '#1A7340' : '#E25648'} strokeWidth={3} />
+                        <Circle cx={x0} cy={y0} r={5} fill='#535BD8' />
+                        <Circle cx={x0} cy={y0} r={8} stroke='rgba(83, 91, 216, 0.2)' strokeWidth={3} fill='none' />
+                        <Circle cx={x1} cy={y1} r={5} fill={isImproved ? '#1A7340' : '#E25648'} />
+                        <Circle cx={x1} cy={y1} r={8} stroke={isImproved ? 'rgba(26, 115, 64, 0.2)' : 'rgba(226, 86, 72, 0.2)'} strokeWidth={3} fill='none' />
+                        <SvgText x={x0} y={chartH - scaleSize(20)} fill='#9E9EA0' fontSize={scaleSize(10)} textAnchor='middle'>{prevDateStr.split(' ').slice(0, 2).join(' ')}</SvgText>
+                        <SvgText x={x1} y={chartH - scaleSize(20)} fill={isImproved ? '#1A7340' : '#E25648'} fontSize={scaleSize(10)} fontFamily='Inter_700Bold' textAnchor='middle'>{date.split(' ').slice(0, 2).join(' ')}</SvgText>
+                        {renderMarker(x0, y0, t('test1'), prevScoreVal ?? 0, '#535BD8')}
+                        {renderMarker(x1, y1, t('test2'), currentScoreVal, isImproved ? '#1A7340' : '#E25648')}
                       </G>
                     );
                   })()}
@@ -797,18 +794,8 @@ export default function ScreeningReportScreen({ navigation, route }: any) {
               {/* Improvement Summary Block */}
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: trendStatusBg, borderRadius: scaleSize(12), padding: scaleSize(12), marginTop: scaleSize(8), gap: scaleSize(8) }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isImproved ? '#1A7340' : '#E25648', borderRadius: scaleSize(8), paddingHorizontal: scaleSize(8), paddingVertical: scaleSize(4), gap: scaleSize(2) }}>
-                  <Svg width={scaleSize(10)} height={scaleSize(10)} viewBox="0 0 10 10">
-                    <Path
-                      d={isImproved ? "M2 8L5 2L8 8" : "M2 2L5 8L8 2"}
-                      stroke="#FFFFFF"
-                      strokeWidth={1.5}
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                  <Text style={{ color: '#FFFFFF', fontSize: scaleSize(11), fontFamily: 'Inter_700Bold' }}>
-                    {isImproved ? `-${percentChange}%` : `+${percentChange}%`}
+                    <Text style={{ color: '#FFFFFF', fontSize: scaleSize(11), fontFamily: 'Inter_700Bold' }}>
+                    {isImproved ? '↓' : '↑'} {isImproved ? `-${percentChange}%` : `+${percentChange}%`}
                   </Text>
                 </View>
                 <Text style={{ fontSize: scaleSize(12), color: '#18182D', fontFamily: 'Inter_600SemiBold', flex: 1 }}>

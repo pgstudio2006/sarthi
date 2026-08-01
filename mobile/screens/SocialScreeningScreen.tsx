@@ -100,11 +100,12 @@ export default function SocialScreeningScreen({ navigation }: { navigation: any 
   const { language } = useLanguage();
   const { t } = useTranslation();
   const screening = useScreening();
-  const [answers, setAnswers] = useState<(number | null)[]>(
-    screening.getDomainAnswers('Social').length === QUESTIONS.length
-      ? screening.getDomainAnswers('Social')
-      : Array(QUESTIONS.length).fill(null)
-  );
+  const savedSocial = screening.getDomainAnswers('Social');
+  const initialSocial = Array(QUESTIONS.length).fill(null);
+  savedSocial.forEach((a, i) => {
+    if (typeof a === 'number' && !Number.isNaN(a)) initialSocial[i] = a;
+  });
+  const [answers, setAnswers] = useState<(number | null)[]>(initialSocial);
   useEffect(() => {
     screening.setDomainAnswers('Social', answers);
   }, [answers]);
@@ -140,7 +141,7 @@ export default function SocialScreeningScreen({ navigation }: { navigation: any 
     positionsRef.current[questionIndex] = event.nativeEvent.layout.y;
   }, []);
 
-  const allAnswered = answers.every((a) => a !== null);
+  const allAnswered = answers.every((a) => typeof a === 'number' && !Number.isNaN(a));
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: top }]}>
@@ -149,7 +150,7 @@ export default function SocialScreeningScreen({ navigation }: { navigation: any 
       <View style={[styles.header, { paddingHorizontal: padding }]} onLayout={onLayoutHeader}>
         <View style={styles.headerTop}>
           <Text style={[styles.sectionLabel, { fontSize: scaleFont(12) }]}>SECTION 01 OF 06</Text>
-          <Pressable onPress={() => navigation.navigate('SaveExit', { sectionNumber: 1, answeredCount: answers.filter((a) => a !== null).length, totalQuestions: QUESTIONS.length })} style={styles.saveExit} hitSlop={scaleSize(10)}>
+          <Pressable onPress={() => { screening.saveProgress(); navigation.navigate('SaveExit', { sectionNumber: 1, answeredCount: answers.filter((a) => typeof a === 'number' && !Number.isNaN(a)).length, totalQuestions: QUESTIONS.length }); }} style={styles.saveExit} hitSlop={scaleSize(10)}>
             <PauseIcon width={scaleSize(16)} height={scaleSize(16)} />
             <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>{t('saveExit')}</Text>
           </Pressable>
@@ -294,6 +295,7 @@ export default function SocialScreeningScreen({ navigation }: { navigation: any 
           onPress={() => {
                 if (allAnswered) {
                   playSound('domainComplete');
+                  screening.saveProgress();
                   navigation.navigate('EmotionScreening');
                 }
               }}

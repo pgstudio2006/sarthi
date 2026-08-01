@@ -119,7 +119,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
       label: meta.label,
       Icon: meta.Icon,
       color: meta.color,
-      ringColor: breakdown?.statusColor ?? meta.ringColor,
+      ringColor: meta.ringColor,
     };
   });
 
@@ -187,7 +187,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
               </Text>
             </View>
             <View style={[styles.resultBadge, { backgroundColor: severityColor, borderColor: severityColor, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} fill="#FFF" color="#FFF" />
+              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} color="#FFF" />
               <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: '#FFF' }]}>{t(resultLabelKey)}</Text>
             </View>
           </View>
@@ -252,7 +252,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
         <View style={[styles.resultCard, { padding: scaleSize(16), borderRadius: scaleSize(20), backgroundColor: severityBg }]}>
           <View style={styles.resultCardHeader}>
             <View style={[styles.resultIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: severityColor }]}>
-              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} fill="#FFF" color="#FFF" />
+              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} color="#FFF" />
             </View>
             <View style={styles.resultCardTitles}>
               <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10), color: severityColor }]}>{t('screeningResult')}</Text>
@@ -283,7 +283,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
             <CourageIcon width={scaleSize(28)} height={scaleSize(28)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#535BD8' }]}>{t('thatTookCourage')}</Text>
+            <Text style={[styles.encouragementTitle, { fontSize: scaleSize(14) }]}>{t('thatTookCourage')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>
               {t('thankYouForShowingUp', { name: childName })}
             </Text>
@@ -295,7 +295,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
             <LockIcon width={scaleSize(28)} height={scaleSize(28)} />
           </View>
           <View style={styles.infoText}>
-            <Text style={[styles.infoTitle, { fontSize: scaleSize(14), color: '#535BD8' }]}>{t('responsesSavedSecurely')}</Text>
+            <Text style={[styles.encouragementTitle, { fontSize: scaleSize(14) }]}>{t('responsesSavedSecurely')}</Text>
             <Text style={[styles.infoBody, { fontSize: scaleSize(12) }]}>{t('encryptedPrivateAndYours')}</Text>
           </View>
         </View>
@@ -306,6 +306,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
           onPress={() =>
             navigation.navigate('SevereAutismReport', {
               childName,
+              childId: route?.params?.childId ?? screening?.childId,
               score,
               total,
               result,
@@ -315,6 +316,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
               domainAnswers: screening?.domainAnswers,
               isRepeat,
               previousScore,
+              completedCount: route?.params?.completedCount ?? (isRepeat ? 2 : 1),
             })
           }
           style={({ pressed }) => [
@@ -322,7 +324,7 @@ export default function SevereAutismCompletionScreen({ navigation, route }: any)
             { height: scaleSize(54), borderRadius: scaleSize(28), opacity: pressed ? 0.9 : 1 },
           ]}
         >
-          <Text style={[styles.primaryCtaText, { fontSize: scaleSize(16) }]}>{t('viewDetailedReport')}</Text>
+          <Text style={[styles.primaryCtaText, { fontSize: scaleSize(16) }]}>{t('viewReportForName', { name: childName })}</Text>
         </Pressable>
         <Pressable onPress={() => navigation.navigate('Home')} style={styles.maybeLater}>
           <Text style={[styles.maybeLaterText, { fontSize: scaleSize(14) }]}>{t('maybeLater')}</Text>
@@ -544,6 +546,10 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontFamily: 'Inter_700Bold',
     color: '#2D2A3A',
+  },
+  encouragementTitle: {
+    fontFamily: 'Inter_700Bold',
+    color: '#535BD8',
   },
   infoBody: {
     fontFamily: 'Inter_400Regular',

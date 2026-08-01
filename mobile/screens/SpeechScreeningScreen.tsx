@@ -101,11 +101,12 @@ export default function SpeechScreeningScreen({ navigation }: { navigation: any 
   const { language } = useLanguage();
   const { t } = useTranslation();
   const screening = useScreening();
-  const [answers, setAnswers] = useState<(number | null)[]>(
-    screening.getDomainAnswers('Speech').length === QUESTIONS.length
-      ? screening.getDomainAnswers('Speech')
-      : Array(QUESTIONS.length).fill(null)
-  );
+  const savedSpeech = screening.getDomainAnswers('Speech');
+  const initialSpeech = Array(QUESTIONS.length).fill(null);
+  savedSpeech.forEach((a, i) => {
+    if (typeof a === 'number' && !Number.isNaN(a)) initialSpeech[i] = a;
+  });
+  const [answers, setAnswers] = useState<(number | null)[]>(initialSpeech);
   useEffect(() => {
     screening.setDomainAnswers('Speech', answers);
   }, [answers]);
@@ -141,7 +142,7 @@ export default function SpeechScreeningScreen({ navigation }: { navigation: any 
     positionsRef.current[questionIndex] = event.nativeEvent.layout.y;
   }, []);
 
-  const allAnswered = answers.every((a) => a !== null);
+  const allAnswered = answers.every((a) => typeof a === 'number' && !Number.isNaN(a));
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: top }]}>
@@ -150,7 +151,7 @@ export default function SpeechScreeningScreen({ navigation }: { navigation: any 
       <View style={[styles.header, { paddingHorizontal: padding }]} onLayout={onLayoutHeader}>
         <View style={styles.headerTop}>
           <Text style={[styles.sectionLabel, { fontSize: scaleFont(12), color: '#3B8DBD' }]}>SECTION 03 OF 06</Text>
-          <Pressable onPress={() => navigation.navigate('SaveExit', { sectionNumber: 3, answeredCount: answers.filter((a) => a !== null).length, totalQuestions: QUESTIONS.length })} style={styles.saveExit} hitSlop={scaleSize(10)}>
+          <Pressable onPress={() => { screening.saveProgress(); navigation.navigate('SaveExit', { sectionNumber: 3, answeredCount: answers.filter((a) => typeof a === 'number' && !Number.isNaN(a)).length, totalQuestions: QUESTIONS.length }); }} style={styles.saveExit} hitSlop={scaleSize(10)}>
             <PauseIcon width={scaleSize(16)} height={scaleSize(16)} />
             <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>{t('saveExit')}</Text>
           </Pressable>
@@ -298,6 +299,7 @@ export default function SpeechScreeningScreen({ navigation }: { navigation: any 
           onPress={() => {
                 if (allAnswered) {
                   playSound('domainComplete');
+                  screening.saveProgress();
                   navigation.navigate('BehaviorScreening');
                 }
               }}

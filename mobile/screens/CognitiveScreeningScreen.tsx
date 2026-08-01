@@ -74,11 +74,12 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
   const { t } = useTranslation();
   const screening = useScreening();
   const { user } = useAuth();
-  const [answers, setAnswers] = useState<(number | null)[]>(
-    screening.getDomainAnswers('Cognitive').length === QUESTIONS.length
-      ? screening.getDomainAnswers('Cognitive')
-      : Array(QUESTIONS.length).fill(null)
-  );
+  const savedCognitive = screening.getDomainAnswers('Cognitive');
+  const initialCognitive = Array(QUESTIONS.length).fill(null);
+  savedCognitive.forEach((a, i) => {
+    if (typeof a === 'number' && !Number.isNaN(a)) initialCognitive[i] = a;
+  });
+  const [answers, setAnswers] = useState<(number | null)[]>(initialCognitive);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -117,7 +118,7 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
     positionsRef.current[questionIndex] = event.nativeEvent.layout.y;
   }, []);
 
-  const allAnswered = answers.every((a) => a !== null);
+  const allAnswered = answers.every((a) => typeof a === 'number' && !Number.isNaN(a));
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: top }]}>
@@ -126,7 +127,7 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
       <View style={[styles.header, { paddingHorizontal: padding }]} onLayout={onLayoutHeader}>
         <View style={styles.headerTop}>
           <Text style={[styles.sectionLabel, { fontSize: scaleFont(12), color: '#7D6CB7' }]}>SECTION 06 OF 06</Text>
-          <Pressable onPress={() => navigation.navigate('SaveExit', { sectionNumber: 6, answeredCount: answers.filter((a) => a !== null).length, totalQuestions: QUESTIONS.length })} style={styles.saveExit} hitSlop={scaleSize(10)}>
+          <Pressable onPress={() => { screening.saveProgress(); navigation.navigate('SaveExit', { sectionNumber: 6, answeredCount: answers.filter((a) => typeof a === 'number' && !Number.isNaN(a)).length, totalQuestions: QUESTIONS.length }); }} style={styles.saveExit} hitSlop={scaleSize(10)}>
             <PauseIcon width={scaleSize(16)} height={scaleSize(16)} />
             <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>{t('saveExit')}</Text>
           </Pressable>
@@ -316,51 +317,52 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
                   .submit()
                   .then((scoreData) => {
                     setSubmitting(false);
-                    if (scoreData) {
-                      const childName = user?.children?.find((c) => c.id === screening.childId)?.name || user?.children?.[0]?.name || 'Child';
-                      const screenerName = user?.caregiverProfile?.name || 'Caregiver';
-                      const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-                      const params = {
-                        childName,
-                        score: scoreData.totalScore,
-                        total: scoreData.maxScore,
-                        result: scoreData.result,
-                        date: today,
-                        screener: screenerName,
-                        domainBreakdown: scoreData.domainBreakdown,
-                        isRepeat: !!screening.previousScore,
-                        previousScore: screening.previousScore
-                          ? {
-                              totalScore: screening.previousScore.totalScore,
-                              result: screening.previousScore.result,
-                              domainBreakdown: screening.previousScore.domainBreakdown,
-                              date: (screening.previousScore as any).date || '',
-                            }
-                          : null,
-                      };
-                      const isNoAutism =
-                        typeof scoreData.result === 'string' &&
-                        ['no autism', 'no signs', 'normal'].some((t) =>
-                          scoreData.result.toLowerCase().includes(t)
-                        );
-                      const isModerate =
-                        typeof scoreData.result === 'string' &&
-                        scoreData.result.toLowerCase().includes('moderate');
-                      const isSevere =
-                        typeof scoreData.result === 'string' &&
-                        scoreData.result.toLowerCase().includes('severe');
-                      const screenName = isNoAutism
-                        ? 'NoAutismCompletion'
-                        : isModerate
-                        ? 'ModerateAutismCompletion'
-                        : isSevere
-                        ? 'SevereAutismCompletion'
-                        : 'ScreeningCompletion';
-                      playSound('screeningComplete');
-                      navigation.navigate(screenName, params);
-                    } else {
-                      setSubmitError(screening.error || 'Failed to generate report. Please try again.');
+                    if (!scoreData) {
+                      throw new Error('Report score missing');
                     }
+                    const childName = user?.children?.find((c) => c.id === screening.childId)?.name || user?.children?.[0]?.name || 'Child';
+                    const screenerName = user?.caregiverProfile?.name || 'Caregiver';
+                    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                    const params = {
+                      childName,
+                      childId: screening.childId,
+                      score: scoreData.totalScore,
+                      total: scoreData.maxScore,
+                      result: scoreData.result,
+                      date: today,
+                      screener: screenerName,
+                      domainBreakdown: scoreData.domainBreakdown,
+                      isRepeat: !!screening.previousScore,
+                      completedCount: screening.previousScore ? 2 : 1,
+                      previousScore: screening.previousScore
+                        ? {
+                            totalScore: screening.previousScore.totalScore,
+                            result: screening.previousScore.result,
+                            domainBreakdown: screening.previousScore.domainBreakdown,
+                            date: (screening.previousScore as any).date || '',
+                          }
+                        : null,
+                    };
+                    const isNoAutism =
+                      typeof scoreData.result === 'string' &&
+                      ['no autism', 'no signs', 'normal'].some((t) =>
+                        scoreData.result.toLowerCase().includes(t)
+                      );
+                    const isModerate =
+                      typeof scoreData.result === 'string' &&
+                      scoreData.result.toLowerCase().includes('moderate');
+                    const isSevere =
+                      typeof scoreData.result === 'string' &&
+                      scoreData.result.toLowerCase().includes('severe');
+                    const screenName = isNoAutism
+                      ? 'NoAutismCompletion'
+                      : isModerate
+                      ? 'ModerateAutismCompletion'
+                      : isSevere
+                      ? 'SevereAutismCompletion'
+                      : 'ScreeningCompletion';
+                    playSound('screeningComplete');
+                    navigation.navigate(screenName, params);
                   })
                   .catch((err: any) => {
                     setSubmitting(false);

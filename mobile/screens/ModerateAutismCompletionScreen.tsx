@@ -19,6 +19,7 @@ import FamilyStarIcon from '../assets/figma/screen27/family_star.svg';
 import CalendarIcon from '../assets/figma/screen27/calendar_month.svg';
 import PersonIcon from '../assets/figma/screen27/Frame-7.svg';
 import FlagIcon from '../assets/figma/screen27/Frame-6.svg';
+import ResultFlagIcon from '../assets/figma/screen27/Frame-10.svg';
 import WarningIcon from '../assets/figma/screen27/Frame-8.svg';
 import CourageIcon from '../assets/figma/screen27/Frame-4.svg';
 import LockIcon from '../assets/figma/screen27/lock_person.svg';
@@ -107,6 +108,7 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
   const handleViewReport = () => {
     navigation.navigate('ModerateAutismReport', {
       childName,
+      childId: route?.params?.childId ?? screening?.childId,
       score,
       total,
       result,
@@ -116,6 +118,7 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
       domainAnswers,
       isRepeat,
       previousScore,
+      completedCount: route?.params?.completedCount ?? (isRepeat ? 2 : 1),
     });
   };
 
@@ -123,7 +126,7 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
     const breakdown = domainBreakdown?.find((item: any) => item.key === domain.key);
     return {
       ...domain,
-      ringColor: breakdown?.statusColor ?? domain.ringColor,
+      ringColor: domain.ringColor,
     };
   });
 
@@ -194,7 +197,7 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
               </Text>
             </View>
             <View style={[styles.resultBadge, { backgroundColor: severityBg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(6) }]}>
-              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} />
+              <FlagIcon width={scaleSize(14)} height={scaleSize(14)} color={severityColor} />
               <Text style={[styles.resultBadgeText, { fontSize: scaleSize(12), color: severityColor }]}>{t(resultLabelKey)}</Text>
             </View>
           </View>
@@ -258,7 +261,7 @@ export default function ModerateAutismCompletionScreen({ navigation, route }: an
         <View style={[styles.resultCard, { padding: scaleSize(16), borderRadius: scaleSize(20), backgroundColor: severityBg }]}>
           <View style={styles.resultCardHeader}>
             <View style={[styles.resultIconBox, { width: scaleSize(56), height: scaleSize(56), borderRadius: scaleSize(14), backgroundColor: severityColor }]}>
-              <FlagIcon width={scaleSize(28)} height={scaleSize(28)} />
+              <ResultFlagIcon width={scaleSize(28)} height={scaleSize(28)} color="#FFF" />
             </View>
             <View style={styles.resultCardTitles}>
               <Text style={[styles.resultCardEyebrow, { fontSize: scaleSize(10), color: severityColor }]}>{t('screeningResult')}</Text>

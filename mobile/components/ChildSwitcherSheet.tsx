@@ -128,10 +128,10 @@ export default function ChildSwitcherSheet({
 
             <Pressable
               onPress={onAddChild}
-              style={[styles.addChildCard, { paddingVertical: scaleSize(14), borderRadius: scaleSize(16) }]}
+              style={[styles.addChildCard, { paddingVertical: scaleSize(14), borderRadius: scaleSize(14) }]}
             >
               <View style={[styles.addChildIcon, { width: scaleSize(40), height: scaleSize(40), borderRadius: scaleSize(20) }]}>
-                <PlusIcon width={scaleSize(20)} height={scaleSize(20)} color={colors.primaryBlue} />
+                <PlusIcon width={scaleSize(20)} height={scaleSize(20)} color="#5963E1" />
               </View>
               <Text style={[styles.addChildText, { fontSize: scaleSize(14) }]} numberOfLines={2}>{t('addAnotherChild')}</Text>
             </Pressable>
@@ -260,20 +260,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: '#535BD8',
+    borderWidth: 2,
+    borderColor: '#5963E1',
     borderStyle: 'dashed',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     gap: 12,
   },
   addChildIcon: {
-    backgroundColor: '#EDFFFD',
+    backgroundColor: '#EDEFFD',
     justifyContent: 'center',
     alignItems: 'center',
   },
   addChildText: {
     fontFamily: 'Inter_600SemiBold',
-    color: colors.mainBlack,
+    color: '#5963E1',
     flex: 1,
     flexWrap: 'wrap',
   },

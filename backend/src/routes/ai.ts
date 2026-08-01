@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
-import { DOMAIN_CONFIG, getDomainStatus } from '../lib/scoring';
+import { DOMAIN_CONFIG, getDomainStatus, MAX_TOTAL_SCORE } from '../lib/scoring';
+import { DOMAIN_QUESTIONS } from '../lib/questionBank';
 
 const router = Router();
 
@@ -113,7 +114,7 @@ async function generateWithOpenRouter(mode: string, childAgeInMonths: number | n
         },
         {
           role: 'user',
-          content: `Mode: ${mode}\nChild age in months: ${childAgeInMonths ?? 'unknown'}\nContext: ${context}\nUse these question priorities in order:\n${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`,
+          content: `Mode: ${mode}\nChild age in months: ${childAgeInMonths ?? 'unknown'}\n\nContext:\n${context}\n\nGenerate exactly 10 FAQ cards. The first cards should be specific to the priority domains and the exact behaviours listed in the context. The remaining cards should use the themes below, but reword each title to include the child name and report details. The body must reference specific behaviours, scores, or results from the context and give one concrete action. Never diagnose or use generic, one-size-fits-all advice.\n\nQuestion themes to guide the remaining cards (reword titles):\n${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
         },
       ],
     }),
@@ -157,29 +158,89 @@ router.post('/faqs', requireAuth, async (req, res) => {
   const progress = Math.round((responseCount / Object.values(DOMAIN_CONFIG).reduce((sum, config) => sum + config.questionCount, 0)) * 100);
   const completedDomains = [...new Set(active?.responses.map((response) => response.domain) || [])];
   const latest = completed[0];
-  const domainContext = latest?.responses.reduce<Record<string, number>>((result, response) => {
-    result[response.domain] = (result[response.domain] || 0) + response.score;
-    return result;
-  }, {}) || {};
-  const priorityDomains = Object.entries(domainContext)
-    .map(([domain, score]) => ({ domain, status: getDomainStatus(domain, score).label, score }))
+
+  // Build attention / strengths lists from the latest completed screening
+  const domainDetails: Record<string, { score: number; maxScore: number; status: string; attention: string[]; strengths: string[] }> = {};
+  if (latest) {
+    for (const response of latest.responses) {
+      const config = DOMAIN_CONFIG[response.domain];
+      if (!config) continue;
+      const entry = domainDetails[response.domain] || { score: 0, maxScore: config.maxScore, status: '', attention: [], strengths: [] };
+      entry.score += response.score;
+      const questionText = DOMAIN_QUESTIONS[response.domain]?.[response.questionIndex];
+      if (questionText) {
+        if (response.score >= 2) {
+          entry.attention.push(questionText);
+        } else {
+          entry.strengths.push(questionText);
+        }
+      }
+      domainDetails[response.domain] = entry;
+    }
+    for (const [domain, entry] of Object.entries(domainDetails)) {
+      const status = getDomainStatus(domain, entry.score);
+      entry.status = status.label;
+    }
+  }
+
+  const priorityDetails = Object.entries(domainDetails)
+    .map(([domain, detail]) => ({ domain, ...detail }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map((item) => `${item.domain}: ${item.status}`);
+    .slice(0, 3);
+
+  const previousSession = latest?.previousSessionId
+    ? completed.find((session) => session.id === latest.previousSessionId)
+    : completed[1];
 
   const mode = buildMode(completed.length, Boolean(active));
   const questions = active ? progressQuestions : completed.length > 1 ? longitudinalQuestions : completed.length === 1 ? interpretationQuestions : awarenessQuestions;
-  const context = active
-    ? `Screening progress is ${progress}%. Completed domains: ${completedDomains.join(', ') || 'none'}. Do not interpret answers.`
-    : completed.length === 1
-    ? `One screening is complete. Priority domains from the report: ${priorityDomains.join('; ') || 'none'}.`
-    : completed.length > 1
-    ? `There are ${completed.length} completed screenings. Use longitudinal progress language and never diagnose.`
-    : 'No screening has been completed. Build awareness and encourage informed screening.';
+
+  const contextLines: string[] = [];
+  contextLines.push(`Child name: ${child.name}`);
+  if (child.ageInMonths) contextLines.push(`Child age: ${child.ageInMonths} months`);
+  contextLines.push(`Screening result: ${latest?.result ?? 'N/A'}`);
+  contextLines.push(`Total score: ${latest?.totalScore ?? 0} / ${MAX_TOTAL_SCORE}`);
+  contextLines.push(`Completed screenings: ${completed.length}`);
+  if (previousSession) {
+    const previousDate = previousSession.completedAt ? new Date(previousSession.completedAt).toISOString().split('T')[0] : 'unknown';
+    contextLines.push(`Previous screening total score: ${previousSession.totalScore ?? 'unknown'} on ${previousDate}`);
+  }
+  contextLines.push('');
+
+  contextLines.push('Priority domains (highest concern first):');
+  if (priorityDetails.length === 0) {
+    contextLines.push('No completed screening data available.');
+  } else {
+    for (const detail of priorityDetails) {
+      const attentionText = detail.attention.slice(0, 3).join('; ');
+      const strengthsText = detail.strengths.slice(0, 3).join('; ');
+      contextLines.push(`- ${detail.domain}: score ${detail.score}/${detail.maxScore}, status "${detail.status}". Attention: ${attentionText || 'none'}. Strengths: ${strengthsText || 'none'}.`);
+    }
+  }
+  contextLines.push('');
+
+  contextLines.push('All domains:');
+  for (const [domain, detail] of Object.entries(domainDetails)) {
+    const attentionText = detail.attention.slice(0, 3).join('; ');
+    const strengthsText = detail.strengths.slice(0, 3).join('; ');
+    contextLines.push(`- ${domain}: score ${detail.score}/${detail.maxScore}, status "${detail.status}". Attention: ${attentionText || 'none'}. Strengths: ${strengthsText || 'none'}.`);
+  }
+  contextLines.push('');
+
+  contextLines.push('Instructions for the response:');
+  contextLines.push('Use the child name and exact scores/behaviours above.');
+  contextLines.push('For each priority domain, create 1-2 cards with specific questions and actions.');
+  contextLines.push('For the remaining cards, answer the question themes using the report details, not generic advice.');
+
+  const context = contextLines.join('\n');
 
   const generated = await generateWithOpenRouter(mode, child.ageInMonths, questions, context);
-  const faqs = generated || questions.map((title) => ({ title, body: fallbackAnswer(title, mode) }));
-  res.json({ success: true, mode, progress, completedDomains, faqs: faqs.slice(0, 10) });
+  if (generated && generated.length === 10) {
+    res.json({ success: true, mode, progress, completedDomains, faqs: generated });
+    return;
+  }
+
+  res.json({ success: true, mode: 'generic', progress, completedDomains, faqs: [] });
 });
 
 export default router;

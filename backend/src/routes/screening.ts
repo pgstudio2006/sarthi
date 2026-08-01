@@ -72,74 +72,92 @@ router.get('/history', async (req, res) => {
 });
 
 router.post('/:id/responses', async (req, res) => {
-  const parse = submitSchema.safeParse(req.body);
-  if (!parse.success) {
-    res.status(400).json({ error: 'Invalid responses' });
-    return;
+  try {
+    const parse = submitSchema.safeParse(req.body);
+    if (!parse.success) {
+      res.status(400).json({ error: 'Invalid responses', details: parse.error.flatten() });
+      return;
+    }
+
+    const userId = req.user!.userId;
+    const sessionId = req.params.id;
+    const session = await prisma.screeningSession.findFirst({
+      where: { id: sessionId, userId },
+    });
+
+    if (!session) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    if (session.status !== 'in_progress') {
+      res.status(400).json({ error: 'Session is not in progress' });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.screeningResponse.deleteMany({ where: { sessionId } });
+      await tx.screeningResponse.createMany({
+        data: parse.data.responses.map((r) => ({ ...r, sessionId })),
+      });
+    });
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[responses] error:', err);
+    res.status(500).json({ error: 'Failed to save progress', details: err?.message });
   }
-
-  const userId = req.user!.userId;
-  const sessionId = req.params.id;
-  const session = await prisma.screeningSession.findFirst({
-    where: { id: sessionId, userId },
-  });
-
-  if (!session) {
-    res.status(404).json({ error: 'Session not found' });
-    return;
-  }
-
-  if (session.status !== 'in_progress') {
-    res.status(400).json({ error: 'Session is not in progress' });
-    return;
-  }
-
-  await prisma.screeningResponse.deleteMany({ where: { sessionId } });
-  await prisma.screeningResponse.createMany({
-    data: parse.data.responses.map((r) => ({ ...r, sessionId })),
-  });
-
-  res.json({ success: true });
 });
 
 router.post('/:id/submit', async (req, res) => {
-  const parse = submitSchema.safeParse(req.body);
-  if (!parse.success) {
-    res.status(400).json({ error: 'Invalid responses' });
-    return;
+  try {
+    const parse = submitSchema.safeParse(req.body);
+    if (!parse.success) {
+      res.status(400).json({ error: 'Invalid responses', details: parse.error.flatten() });
+      return;
+    }
+
+    const userId = req.user!.userId;
+    const sessionId = req.params.id;
+    const session = await prisma.screeningSession.findFirst({
+      where: { id: sessionId, userId },
+      include: { child: true },
+    });
+
+    if (!session) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    if (session.status !== 'in_progress') {
+      res.status(400).json({ error: 'Session is not in progress' });
+      return;
+    }
+
+    const scored = scoreResponses(parse.data.responses);
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.screeningResponse.deleteMany({ where: { sessionId } });
+      await tx.screeningResponse.createMany({
+        data: parse.data.responses.map((r) => ({ ...r, sessionId })),
+      });
+      return tx.screeningSession.update({
+        where: { id: sessionId },
+        data: {
+          status: 'completed',
+          completedAt: new Date(),
+          totalScore: scored.totalScore,
+          result: scored.result,
+        },
+        include: { responses: true, child: true },
+      });
+    });
+
+    res.json({ success: true, session: updated, score: scored });
+  } catch (err: any) {
+    console.error('[submit] error:', err);
+    res.status(500).json({ error: 'Failed to generate report', details: err?.message });
   }
-
-  const userId = req.user!.userId;
-  const sessionId = req.params.id;
-  const session = await prisma.screeningSession.findFirst({
-    where: { id: sessionId, userId },
-    include: { child: true },
-  });
-
-  if (!session) {
-    res.status(404).json({ error: 'Session not found' });
-    return;
-  }
-
-  await prisma.screeningResponse.deleteMany({ where: { sessionId } });
-  await prisma.screeningResponse.createMany({
-    data: parse.data.responses.map((r) => ({ ...r, sessionId })),
-  });
-
-  const scored = scoreResponses(parse.data.responses);
-
-  const updated = await prisma.screeningSession.update({
-    where: { id: sessionId },
-    data: {
-      status: 'completed',
-      completedAt: new Date(),
-      totalScore: scored.totalScore,
-      result: scored.result,
-    },
-    include: { responses: true, child: true },
-  });
-
-  res.json({ success: true, session: updated, score: scored });
 });
 
 router.get('/latest', async (req, res) => {

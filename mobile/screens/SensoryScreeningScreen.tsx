@@ -83,11 +83,12 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
   const { language } = useLanguage();
   const { t } = useTranslation();
   const screening = useScreening();
-  const [answers, setAnswers] = useState<(number | null)[]>(
-    screening.getDomainAnswers('Sensory').length === QUESTIONS.length
-      ? screening.getDomainAnswers('Sensory')
-      : Array(QUESTIONS.length).fill(null)
-  );
+  const savedSensory = screening.getDomainAnswers('Sensory');
+  const initialSensory = Array(QUESTIONS.length).fill(null);
+  savedSensory.forEach((a, i) => {
+    if (typeof a === 'number' && !Number.isNaN(a)) initialSensory[i] = a;
+  });
+  const [answers, setAnswers] = useState<(number | null)[]>(initialSensory);
   useEffect(() => {
     screening.setDomainAnswers('Sensory', answers);
   }, [answers]);
@@ -123,7 +124,7 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
     positionsRef.current[questionIndex] = event.nativeEvent.layout.y;
   }, []);
 
-  const allAnswered = answers.every((a) => a !== null);
+  const allAnswered = answers.every((a) => typeof a === 'number' && !Number.isNaN(a));
 
   return (
     <SafeAreaView style={[styles.container, { paddingTop: top }]}>
@@ -132,7 +133,7 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
       <View style={[styles.header, { paddingHorizontal: padding }]} onLayout={onLayoutHeader}>
         <View style={styles.headerTop}>
           <Text style={[styles.sectionLabel, { fontSize: scaleFont(12), color: '#F4A261' }]}>SECTION 05 OF 06</Text>
-          <Pressable onPress={() => navigation.navigate('SaveExit', { sectionNumber: 5, answeredCount: answers.filter((a) => a !== null).length, totalQuestions: QUESTIONS.length })} style={styles.saveExit} hitSlop={scaleSize(10)}>
+          <Pressable onPress={() => { screening.saveProgress(); navigation.navigate('SaveExit', { sectionNumber: 5, answeredCount: answers.filter((a) => typeof a === 'number' && !Number.isNaN(a)).length, totalQuestions: QUESTIONS.length }); }} style={styles.saveExit} hitSlop={scaleSize(10)}>
             <PauseIcon width={scaleSize(16)} height={scaleSize(16)} />
             <Text style={[styles.saveExitText, { fontSize: scaleFont(11) }]}>{t('saveExit')}</Text>
           </Pressable>
@@ -280,6 +281,7 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
           onPress={() => {
                 if (allAnswered) {
                   playSound('domainComplete');
+                  screening.saveProgress();
                   navigation.navigate('CognitiveScreening');
                 }
               }}

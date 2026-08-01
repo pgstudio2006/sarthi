@@ -289,7 +289,7 @@ function buildReportHtml(data: ScreeningReportData): string {
     questions.forEach((q, i) => {
       const a = answers[i];
       if (a === null || a === undefined) missing.push(q);
-      else if (a >= 1) attention.push(q);
+      else if (a >= 2) attention.push(q);
       else working.push(q);
     });
 
@@ -383,7 +383,7 @@ function buildReportHtml(data: ScreeningReportData): string {
         ${domainDetails}
 
         <p style='margin-top:32px;font-size:11px;color:#6B7180;'>
-          This report has been prepared based on the scores given by ${escapeHtml(screenerRole)} (from the ${total} ISAA questions). The “What's Working Well” section lists items answered Rarely (score 0), and the “Needs Attention” section lists items answered Sometimes, Often, Most of the times or Almost Always (score 1 or higher).
+          This report has been prepared based on the scores given by ${escapeHtml(screenerRole)} (from the ${total} ISAA questions). The “What's Working Well” section lists items answered Rarely or Sometimes (score 0 or 1), and the “Needs Attention” section lists items answered Often, Most of the times or Almost Always (score 2 or higher).
         </p>
       </body>
     </html>
