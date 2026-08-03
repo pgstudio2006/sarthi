@@ -147,6 +147,15 @@ function getResultLabelKey(result: string): string {
   return 'screeningResult';
 }
 
+function getShortResultLabelKey(result: string): string {
+  const r = result.toLowerCase();
+  if (r.includes('normal') || r.includes('no signs') || r.includes('no autism')) return 'resultShortNormal';
+  if (r.includes('mild')) return 'resultShortMild';
+  if (r.includes('moderate')) return 'resultShortModerate';
+  if (r.includes('severe')) return 'resultShortSevere';
+  return 'screeningResult';
+}
+
 function formatScreeningDate(value?: string | null) {
   if (!value) return '';
   const date = new Date(value);
@@ -865,27 +874,27 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                         : { text: '#BB853E', bg: '#FEF3C7' };
                       return (
                         <View key={`session-${index}`} style={[styles.historyCard, { borderRadius: scaleSize(16), padding: scaleSize(14) }]}>
-                          <View style={styles.historyRow}>
-                            <View style={styles.historyMeta}>
-                              <View style={styles.metaItem}>
-                                <CalendarIcon width={scaleSize(14)} height={scaleSize(14)} color="#6B7180" />
-                                <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{session.date || '—'}</Text>
-                              </View>
-                              <View style={[styles.metaItem, { marginTop: scaleSize(4) }]}>
-                                <PersonIcon width={scaleSize(14)} height={scaleSize(14)} />
-                                <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{session.screener || t('caregiver')}</Text>
-                              </View>
+                          <View style={[styles.historyTopRow, { marginBottom: scaleSize(10) }]}>
+                            <View style={styles.metaItem}>
+                              <CalendarIcon width={scaleSize(14)} height={scaleSize(14)} color="#6B7180" />
+                              <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{session.date || '—'}</Text>
+                            </View>
+                            <View style={styles.metaItem}>
+                              <PersonIcon width={scaleSize(14)} height={scaleSize(14)} />
+                              <Text style={[styles.overviewMetaText, { fontSize: scaleSize(12) }]}>{session.screener || t('caregiver')}</Text>
                             </View>
                           </View>
-                          <View style={[styles.historyScoreRow, { marginTop: scaleSize(10) }]}>
-                            <Text style={[styles.scoreValue, { fontSize: scaleSize(18), fontFamily: 'Inter_800ExtraBold', color: '#18182D' }]}>
-                              {session.score} / {session.total}
-                            </Text>
-                            <View style={[styles.resultBadge, { backgroundColor: sessionColors.bg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(5) }]}>
-                              <ResultFlagIcon width={scaleSize(12)} height={scaleSize(12)} color={sessionColors.text} />
-                              <Text style={[styles.resultBadgeText, { fontSize: scaleSize(11), color: sessionColors.text, marginLeft: scaleSize(4), fontFamily: 'Inter_700Bold' }]}>
-                                {t(getResultLabelKey(session.result))}
+                          <View style={styles.historyScoreRow}>
+                            <View style={styles.historyScoreLeft}>
+                              <Text style={[styles.scoreValue, { fontSize: scaleSize(18), fontFamily: 'Inter_800ExtraBold', color: '#18182D' }]}>
+                                {session.score} / {session.total}
                               </Text>
+                              <View style={[styles.resultBadge, { backgroundColor: sessionColors.bg, borderRadius: scaleSize(16), paddingHorizontal: scaleSize(10), paddingVertical: scaleSize(5) }]}>
+                                <ResultFlagIcon width={scaleSize(12)} height={scaleSize(12)} color={sessionColors.text} />
+                                <Text style={[styles.resultBadgeText, { fontSize: scaleSize(11), color: sessionColors.text, marginLeft: scaleSize(4), fontFamily: 'Inter_700Bold' }]}>
+                                  {t(getShortResultLabelKey(session.result))}
+                                </Text>
+                              </View>
                             </View>
                             <Pressable
                               onPress={() => handleViewSessionReport(session)}
@@ -1623,9 +1632,9 @@ const styles = StyleSheet.create({
   rescreenCta: { backgroundColor: '#535BD8', justifyContent: 'center', alignItems: 'center' },
   rescreenCtaText: { fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   historyCard: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4E7FB' },
-  historyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  historyMeta: { gap: 2 },
-  historyScoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  historyTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  historyScoreRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  historyScoreLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   viewDetailsBtn: { backgroundColor: '#535BD8' },
   viewDetailsBtnText: { fontFamily: 'Inter_700Bold', color: '#FFFFFF' },
   overviewCard: { backgroundColor: '#F3F2FF', gap: 8 },
