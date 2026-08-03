@@ -72,7 +72,7 @@ export default function SplashScreen({ navigation }: { navigation: any }) {
   useEffect(() => {
     if (!targetScreen) return;
     const timer = setTimeout(() => {
-      if (targetScreen === 'Home' && (preloadedHistoryRef.current || preloadedAiFaqsRef.current)) {
+      if (targetScreen === 'Home' && (preloadedHistoryRef.current?.length || preloadedAiFaqsRef.current?.length)) {
         navigation.replace('Home', {
           preloadedHistory: preloadedHistoryRef.current,
           preloadedAiFaqs: preloadedAiFaqsRef.current,

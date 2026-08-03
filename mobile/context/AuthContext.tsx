@@ -25,9 +25,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
     async function restore() {
       try {
-        const storedToken = await AsyncStorage.getItem('token');
+        const [storedToken, storedActiveChildId, storedUser] = await Promise.all([
+          AsyncStorage.getItem('token'),
+          AsyncStorage.getItem('activeChildId'),
+          AsyncStorage.getItem('user'),
+        ]);
         if (storedToken && isMounted) {
           setToken(storedToken);
+        }
+        if (storedActiveChildId && isMounted) {
+          setActiveChildIdState(storedActiveChildId);
+        }
+        if (storedUser && isMounted) {
+          setUser(JSON.parse(storedUser));
+        }
+        if (storedToken && isMounted) {
           const result = await getMe();
           if (result.success && isMounted) {
             setUser(result.data.user);
@@ -62,12 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (newToken: string, newUser: User) => {
     await AsyncStorage.setItem('token', newToken);
+    await AsyncStorage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   };
 
   const signOut = async () => {
     await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
     await AsyncStorage.removeItem('activeChildId');
     await AsyncStorage.removeItem('onboardingCompleted');
     await AsyncStorage.removeItem('selectedLanguage');

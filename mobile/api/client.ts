@@ -118,6 +118,7 @@ async function request<T>(
     const mock = getDevMock<T>(path, options);
     if (mock) return mock;
   }
+  let controller: AbortController | undefined;
   try {
     const token = await getToken();
     const headers: Record<string, string> = {
@@ -127,17 +128,19 @@ async function request<T>(
       headers.Authorization = `Bearer ${token}`;
     }
 
+    const DEFAULT_TIMEOUT = 10000;
     const { timeout, ...rest } = options || {};
-    const controller = new AbortController();
+    const effectiveTimeout = timeout ?? DEFAULT_TIMEOUT;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    if (timeout && timeout > 0) {
-      timeoutId = setTimeout(() => controller.abort(), timeout);
+    if (effectiveTimeout > 0) {
+      controller = new AbortController();
+      timeoutId = setTimeout(() => controller?.abort(), effectiveTimeout);
     }
 
     const response = await fetch(`${API_BASE_URL}${path}`, {
       ...rest,
       headers: { ...headers, ...rest.headers },
-      signal: controller.signal,
+      signal: controller?.signal,
     });
 
     if (timeoutId) clearTimeout(timeoutId);
@@ -145,6 +148,12 @@ async function request<T>(
     const json = await response.json().catch(() => null);
 
     if (!response.ok) {
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: 'Unable to reach the server. Please check your network and try again.',
+        };
+      }
       return {
         success: false,
         error: json?.error || `Request failed with status ${response.status}`,
@@ -153,6 +162,12 @@ async function request<T>(
 
     return { success: true, data: json as T };
   } catch (err) {
+    if (controller?.signal.aborted) {
+      return {
+        success: false,
+        error: 'Request timed out. Please check your internet connection.',
+      };
+    }
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Network error',

@@ -8,6 +8,7 @@ import {
   Modal,
   Image,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ProgressRing from '../components/ProgressRing';
 import CheckmarkIcon from '../assets/figma/screen28/Checkmark1.png';
@@ -237,13 +238,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     setHistoryLoading(true);
     const historyResult = await getScreeningHistory(id);
 
-    let nextHistory = historyResult.success ? historyResult.data.sessions : [];
-    if (optimistic?.childId === id) {
-      const alreadyInApi = nextHistory.some((s: any) => s.id === optimistic.id);
-      nextHistory = alreadyInApi ? nextHistory : [optimistic, ...nextHistory];
+    if (historyResult.success) {
+      let nextHistory = historyResult.data.sessions;
+      if (optimistic?.childId === id) {
+        const alreadyInApi = nextHistory.some((s: any) => s.id === optimistic.id);
+        nextHistory = alreadyInApi ? nextHistory : [optimistic, ...nextHistory];
+      }
+      setScreeningHistory(nextHistory);
+      AsyncStorage.setItem(`@screening_history_${id}`, JSON.stringify(nextHistory)).catch(() => {});
     }
 
-    setScreeningHistory(nextHistory);
     setHistoryLoading(false);
   }, [child?.id, screening.lastCompletedSession]);
 
@@ -256,7 +260,9 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     try {
       const aiResult = await getAiFaqs(id);
       if (aiResult.success && aiResult.data.faqs.length > 0 && aiResult.data.mode !== 'generic') {
-        setAiFaqs(aiResult.data.faqs.slice(0, 10));
+        const nextFaqs = aiResult.data.faqs.slice(0, 10);
+        setAiFaqs(nextFaqs);
+        AsyncStorage.setItem(`@ai_faqs_${id}`, JSON.stringify(nextFaqs)).catch(() => {});
       }
     } finally {
       setAiFaqsLoading(false);
@@ -265,16 +271,33 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
   }, [child?.id]);
 
   useEffect(() => {
-    const shouldFetchHistory = !preloadedHistory?.length;
-    const shouldFetchAi = !preloadedAiFaqs?.length;
-    if (shouldFetchHistory) fetchHistory();
-    if (shouldFetchAi) fetchAiFaqs();
+    const id = child?.id;
+    if (!id) return;
+    const shouldFetchHistory = preloadedHistory === undefined;
+    const shouldFetchAi = preloadedAiFaqs === undefined;
+
+    (async () => {
+      try {
+        if (shouldFetchHistory) {
+          const cached = await AsyncStorage.getItem(`@screening_history_${id}`);
+          if (cached) setScreeningHistory(JSON.parse(cached));
+        }
+        if (shouldFetchAi) {
+          const cached = await AsyncStorage.getItem(`@ai_faqs_${id}`);
+          if (cached) setAiFaqs(JSON.parse(cached));
+        }
+      } catch {}
+
+      if (shouldFetchHistory) fetchHistory(id);
+      if (shouldFetchAi) fetchAiFaqs();
+    })();
+
     const unsubscribe = navigation.addListener('focus', () => {
       fetchHistory();
       fetchAiFaqs();
     });
     return unsubscribe;
-  }, [navigation, fetchHistory, fetchAiFaqs, preloadedHistory, preloadedAiFaqs]);
+  }, [navigation, fetchHistory, fetchAiFaqs, preloadedHistory, preloadedAiFaqs, child?.id]);
 
   useEffect(() => {
     if (screening.lastSubmittedAt) {
