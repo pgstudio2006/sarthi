@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   useWindowDimensions,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
@@ -29,48 +30,96 @@ export default function SideMenu({ visible, onClose, onLanguage }: SideMenuProps
   const { language, t } = useLanguage();
   const caregiver = user?.caregiverProfile;
 
+  const drawerWidth = Math.min(330, width * 0.82);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(drawerWidth)).current;
+  const [render, setRender] = useState(visible);
+
+  useEffect(() => {
+    if (visible) {
+      setRender(true);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 40,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: drawerWidth,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setRender(false));
+    }
+  }, [visible, drawerWidth, fadeAnim, slideAnim]);
+
+  if (!render) return null;
+
   return (
-    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
       <View style={styles.root}>
-        <Pressable style={styles.overlay} onPress={onClose} />
-        <SafeAreaView style={styles.safe}>
-          <View style={[styles.drawer, { width: Math.min(330, width * 0.82), height: '100%' }]}>
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>{t('profileSettings')}</Text>
-              <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={10}>
-                <CloseIcon width={18} height={18} />
-              </Pressable>
-            </View>
-
-            <View style={styles.profileCard}>
-              <AvatarIcon width={56} height={56} />
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{caregiver?.name || 'User'}</Text>
-                <Text style={styles.profileRole}>{(caregiver?.role || 'PARENT').toUpperCase()}</Text>
-                <Text style={styles.profileEmail}>{caregiver?.email || ''}</Text>
+        <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.drawerContainer,
+            { width: drawerWidth, transform: [{ translateX: slideAnim }] },
+          ]}
+        >
+          <SafeAreaView style={styles.safe}>
+            <View style={[styles.drawer, { width: drawerWidth, height: '100%' }]}>
+              <View style={styles.header}>
+                <Text style={styles.headerTitle}>{t('profileSettings')}</Text>
+                <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={10}>
+                  <CloseIcon width={18} height={18} />
+                </Pressable>
               </View>
+
+              <View style={styles.profileCard}>
+                <AvatarIcon width={56} height={56} />
+                <View style={styles.profileInfo}>
+                  <Text style={styles.profileName}>{caregiver?.name || 'User'}</Text>
+                  <Text style={styles.profileRole}>{(caregiver?.role || 'PARENT').toUpperCase()}</Text>
+                  <Text style={styles.profileEmail}>{caregiver?.email || ''}</Text>
+                </View>
+              </View>
+
+              <Pressable
+                style={styles.logoutBtn}
+                onPress={async () => {
+                  await signOut();
+                  navigation.reset({ index: 0, routes: [{ name: 'Splash' }] });
+                }}
+              >
+                <Text style={styles.logoutText}>{t('logout')}</Text>
+              </Pressable>
+
+              <Pressable style={styles.languageRow} onPress={onLanguage}>
+                <LanguageIcon width={24} height={24} />
+                <Text style={styles.languageLabel}>{t('language')}</Text>
+                <Text style={styles.languageValue}>{language}</Text>
+                <Text style={styles.chevron}>›</Text>
+              </Pressable>
+
+              <Text style={styles.version}>TSAA v2.4.1 · Made with care</Text>
             </View>
-
-            <Pressable
-              style={styles.logoutBtn}
-              onPress={async () => {
-                await signOut();
-                navigation.reset({ index: 0, routes: [{ name: 'Splash' }] });
-              }}
-            >
-              <Text style={styles.logoutText}>{t('logout')}</Text>
-            </Pressable>
-
-            <Pressable style={styles.languageRow} onPress={onLanguage}>
-              <LanguageIcon width={24} height={24} />
-              <Text style={styles.languageLabel}>{t('language')}</Text>
-              <Text style={styles.languageValue}>{language}</Text>
-              <Text style={styles.chevron}>›</Text>
-            </Pressable>
-
-            <Text style={styles.version}>TSAA v2.4.1 · Made with care</Text>
-          </View>
-        </SafeAreaView>
+          </SafeAreaView>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -79,16 +128,19 @@ export default function SideMenu({ visible, onClose, onLanguage }: SideMenuProps
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    flexDirection: 'row',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(18, 18, 24, 0.4)',
   },
-  overlay: {
-    width: 60,
-    height: '100%',
+  drawerContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
   },
   safe: {
     flex: 1,
-    alignItems: 'flex-end',
   },
   drawer: {
     position: 'relative',
