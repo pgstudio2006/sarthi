@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,6 +9,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useAuth } from '../context/AuthContext';
+import { getScreeningHistory, getAiFaqs } from '../api/client';
+import type { AiFaq } from '../api/client';
 import Logo from '../components/Logo';
 
 const FIGMA_WIDTH = 390;
@@ -17,7 +20,10 @@ export default function SplashScreen({ navigation }: { navigation: any }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const scale = width / FIGMA_WIDTH;
+  const { activeChild } = useAuth();
   const [targetScreen, setTargetScreen] = useState<string | null>(null);
+  const preloadedHistoryRef = useRef<any[] | null>(null);
+  const preloadedAiFaqsRef = useRef<AiFaq[] | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -50,9 +56,30 @@ export default function SplashScreen({ navigation }: { navigation: any }) {
   }, []);
 
   useEffect(() => {
+    if (targetScreen !== 'Home' || !activeChild?.id) return;
+    getScreeningHistory(activeChild.id).then((res) => {
+      if (res.success && res.data.sessions) {
+        preloadedHistoryRef.current = res.data.sessions;
+      }
+    });
+    getAiFaqs(activeChild.id).then((res) => {
+      if (res.success && res.data.faqs.length > 0 && res.data.mode !== 'generic') {
+        preloadedAiFaqsRef.current = res.data.faqs.slice(0, 10);
+      }
+    });
+  }, [targetScreen, activeChild]);
+
+  useEffect(() => {
     if (!targetScreen) return;
     const timer = setTimeout(() => {
-      navigation.replace(targetScreen);
+      if (targetScreen === 'Home' && (preloadedHistoryRef.current || preloadedAiFaqsRef.current)) {
+        navigation.replace('Home', {
+          preloadedHistory: preloadedHistoryRef.current,
+          preloadedAiFaqs: preloadedAiFaqsRef.current,
+        });
+      } else {
+        navigation.replace(targetScreen);
+      }
     }, 5000);
     return () => clearTimeout(timer);
   }, [targetScreen, navigation]);

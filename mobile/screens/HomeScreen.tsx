@@ -214,11 +214,14 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
   const [showBottomStartCta, setShowBottomStartCta] = useState(false);
 
   // Screening history and loading states
-  const [screeningHistory, setScreeningHistory] = useState<any[]>([]);
-  const [aiFaqs, setAiFaqs] = useState<AiFaq[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const preloadedHistory = route.params?.preloadedHistory;
+  const preloadedAiFaqs = route.params?.preloadedAiFaqs;
+
+  const [screeningHistory, setScreeningHistory] = useState<any[]>(preloadedHistory || []);
+  const [aiFaqs, setAiFaqs] = useState<AiFaq[]>(preloadedAiFaqs || []);
+  const [historyLoading, setHistoryLoading] = useState(!preloadedHistory);
   const [aiFaqsLoading, setAiFaqsLoading] = useState(false);
-  const lastAiChildIdRef = useRef<string | null>(null);
+  const lastAiChildIdRef = useRef<string | null>(preloadedAiFaqs?.length ? child?.id ?? null : null);
 
   const fetchHistory = useCallback(async (overrideChildId?: string) => {
     const id = overrideChildId || child?.id;
@@ -262,14 +265,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
   }, [child?.id]);
 
   useEffect(() => {
-    fetchHistory();
-    fetchAiFaqs();
+    const shouldFetchHistory = !preloadedHistory?.length;
+    const shouldFetchAi = !preloadedAiFaqs?.length;
+    if (shouldFetchHistory) fetchHistory();
+    if (shouldFetchAi) fetchAiFaqs();
     const unsubscribe = navigation.addListener('focus', () => {
       fetchHistory();
       fetchAiFaqs();
     });
     return unsubscribe;
-  }, [navigation, fetchHistory, fetchAiFaqs]);
+  }, [navigation, fetchHistory, fetchAiFaqs, preloadedHistory, preloadedAiFaqs]);
 
   useEffect(() => {
     if (screening.lastSubmittedAt) {
