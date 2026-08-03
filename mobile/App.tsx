@@ -112,11 +112,11 @@ export default function App() {
           <Stack.Screen name="NoAutismCompletion" component={NoAutismCompletionScreen} />
           <Stack.Screen name="NoAutismReport" component={NoAutismReportScreen} />
           <Stack.Screen name="ModerateAutismCompletion" component={ModerateAutismCompletionScreen} />
-          <Stack.Screen name="ModerateAutismReport" component={ModerateAutismReportScreen} />
+          <Stack.Screen name="ModerateAutismReport" component={ScreeningReportScreen} />
           <Stack.Screen name="SevereAutismCompletion" component={SevereAutismCompletionScreen} />
-          <Stack.Screen name="SevereAutismReport" component={SeScAienengrtScreen} />
+          <Stack.Screen name="SevereAutismReport" component={ScreeningReportScreen} />
         </Stack.Navigator>
-      </NavigationContainer>crnng
+      </NavigationContainer>
           </ScreeningProvider>
         <StatusBar style="dark" />
       </AuthProvider>

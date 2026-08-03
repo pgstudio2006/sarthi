@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   Text,
@@ -217,6 +217,8 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
   const [screeningHistory, setScreeningHistory] = useState<any[]>([]);
   const [aiFaqs, setAiFaqs] = useState<AiFaq[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [aiFaqsLoading, setAiFaqsLoading] = useState(false);
+  const lastAiChildIdRef = useRef<string | null>(null);
 
   const fetchHistory = useCallback(async (overrideChildId?: string) => {
     const id = overrideChildId || child?.id;
@@ -230,11 +232,7 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     }
 
     setHistoryLoading(true);
-
-    const [historyResult, aiResult] = await Promise.all([
-      getScreeningHistory(id),
-      getAiFaqs(id),
-    ]);
+    const historyResult = await getScreeningHistory(id);
 
     let nextHistory = historyResult.success ? historyResult.data.sessions : [];
     if (optimistic?.childId === id) {
@@ -244,25 +242,42 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
 
     setScreeningHistory(nextHistory);
     setHistoryLoading(false);
-
-    if (aiResult.success && aiResult.data.faqs.length > 0 && aiResult.data.mode !== 'generic') {
-      setAiFaqs(aiResult.data.faqs.slice(0, 10));
-    }
   }, [child?.id, screening.lastCompletedSession]);
+
+  const fetchAiFaqs = useCallback(async (force = false) => {
+    const id = child?.id;
+    if (!id) return;
+    if (!force && lastAiChildIdRef.current === id) return;
+
+    setAiFaqsLoading(true);
+    try {
+      const aiResult = await getAiFaqs(id);
+      if (aiResult.success && aiResult.data.faqs.length > 0 && aiResult.data.mode !== 'generic') {
+        setAiFaqs(aiResult.data.faqs.slice(0, 10));
+      }
+    } finally {
+      setAiFaqsLoading(false);
+      lastAiChildIdRef.current = id;
+    }
+  }, [child?.id]);
 
   useEffect(() => {
     fetchHistory();
+    fetchAiFaqs();
     const unsubscribe = navigation.addListener('focus', () => {
       fetchHistory();
+      fetchAiFaqs();
     });
     return unsubscribe;
-  }, [navigation, fetchHistory]);
+  }, [navigation, fetchHistory, fetchAiFaqs]);
 
   useEffect(() => {
     if (screening.lastSubmittedAt) {
       fetchHistory();
+      lastAiChildIdRef.current = null;
+      fetchAiFaqs(true);
     }
-  }, [screening.lastSubmittedAt, fetchHistory]);
+  }, [screening.lastSubmittedAt, fetchHistory, fetchAiFaqs]);
 
   const completedCount = useMemo(() => {
     return screeningHistory.filter((s) => s.status === 'completed').length;

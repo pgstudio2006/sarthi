@@ -112,7 +112,7 @@ function getDevMock<T>(path: string, options?: RequestInit): ApiResponse<T> | un
 
 async function request<T>(
   path: string,
-  options?: RequestInit
+  options?: RequestInit & { timeout?: number }
 ): Promise<ApiResponse<T>> {
   if (MOCK_API) {
     const mock = getDevMock<T>(path, options);
@@ -127,10 +127,20 @@ async function request<T>(
       headers.Authorization = `Bearer ${token}`;
     }
 
+    const { timeout, ...rest } = options || {};
+    const controller = new AbortController();
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    if (timeout && timeout > 0) {
+      timeoutId = setTimeout(() => controller.abort(), timeout);
+    }
+
     const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers: { ...headers, ...options?.headers },
+      ...rest,
+      headers: { ...headers, ...rest.headers },
+      signal: controller.signal,
     });
+
+    if (timeoutId) clearTimeout(timeoutId);
 
     const json = await response.json().catch(() => null);
 
@@ -369,6 +379,7 @@ export async function getAiFaqs(
   return request('/ai/faqs', {
     method: 'POST',
     body: JSON.stringify({ childId }),
+    timeout: 15000,
   });
 }
 

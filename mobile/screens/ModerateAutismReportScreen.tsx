@@ -243,8 +243,7 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
 export default function ModerateAutismReportScreen({ navigation, route }: any) {
   const { scaleSize, padding } = useResponsive();
   const { t } = useTranslation();
-  const { width } = useWindowDimensions();
-  const cardWidth = width - scaleSize(32) - scaleSize(48);
+  const screening = useScreening();
   const childName      = route?.params?.childName     ?? '';
   const score          = route?.params?.score         ?? 0;
   const total          = route?.params?.total         ?? 1;
