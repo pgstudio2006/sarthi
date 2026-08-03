@@ -101,15 +101,30 @@ export default function SpeechScreeningScreen({ navigation }: { navigation: any 
   const { language } = useLanguage();
   const { t } = useTranslation();
   const screening = useScreening();
-  const savedSpeech = screening.getDomainAnswers('Speech');
-  const initialSpeech = Array(QUESTIONS.length).fill(null);
-  savedSpeech.forEach((a, i) => {
-    if (typeof a === 'number' && !Number.isNaN(a)) initialSpeech[i] = a;
-  });
+  const savedSpeech = screening.domainAnswers?.Speech || [];
+  const initialSpeech = Array(QUESTIONS.length)
+    .fill(null)
+    .map((_, i) => (typeof savedSpeech[i] === 'number' && !Number.isNaN(savedSpeech[i]) ? savedSpeech[i] : null));
   const [answers, setAnswers] = useState<(number | null)[]>(initialSpeech);
+
+  const hasWritten = useRef(false);
   useEffect(() => {
+    if (!hasWritten.current) {
+      hasWritten.current = true;
+      return;
+    }
     screening.setDomainAnswers('Speech', answers);
   }, [answers]);
+
+  useEffect(() => {
+    const incoming = screening.domainAnswers?.Speech || [];
+    const next = Array(QUESTIONS.length)
+      .fill(null)
+      .map((_, i) => (typeof incoming[i] === 'number' && !Number.isNaN(incoming[i]) ? incoming[i] : null));
+    if (JSON.stringify(next) !== JSON.stringify(answers)) {
+      setAnswers(next);
+    }
+  }, [screening.domainAnswers]);
   const scrollRef = useRef<ScrollView>(null);
   const headerHeightRef = useRef(0);
   const positionsRef = useRef<number[]>([]);

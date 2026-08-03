@@ -75,17 +75,31 @@ export default function CognitiveScreeningScreen({ navigation }: { navigation: a
   const screening = useScreening();
   const { user } = useAuth();
   const savedCognitive = screening.getDomainAnswers('Cognitive');
-  const initialCognitive = Array(QUESTIONS.length).fill(null);
-  savedCognitive.forEach((a, i) => {
-    if (typeof a === 'number' && !Number.isNaN(a)) initialCognitive[i] = a;
-  });
+  const initialCognitive = Array(QUESTIONS.length)
+    .fill(null)
+    .map((_, i) => (typeof savedCognitive[i] === 'number' && !Number.isNaN(savedCognitive[i]) ? savedCognitive[i] : null));
   const [answers, setAnswers] = useState<(number | null)[]>(initialCognitive);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const hasWritten = useRef(false);
   useEffect(() => {
+    if (!hasWritten.current) {
+      hasWritten.current = true;
+      return;
+    }
     screening.setDomainAnswers('Cognitive', answers);
   }, [answers]);
+
+  useEffect(() => {
+    const incoming = screening.domainAnswers?.Cognitive || [];
+    const next = Array(QUESTIONS.length)
+      .fill(null)
+      .map((_, i) => (typeof incoming[i] === 'number' && !Number.isNaN(incoming[i]) ? incoming[i] : null));
+    if (JSON.stringify(next) !== JSON.stringify(answers)) {
+      setAnswers(next);
+    }
+  }, [screening.domainAnswers]);
   const scrollRef = useRef<ScrollView>(null);
   const headerHeightRef = useRef(0);
   const positionsRef = useRef<number[]>([]);

@@ -22,9 +22,9 @@ type ScreeningContextType = {
   lastSubmittedAt: number | null;
   loading: boolean;
   error: string | null;
-  start: (childId: string) => Promise<string | null>;
-  setDomainAnswers: (domain: string, answers: (number | null)[]) => void;
   getDomainAnswers: (domain: string) => (number | null)[];
+  setDomainAnswers: (domain: string, answers: (number | null)[]) => void;
+  start: (childId: string) => Promise<string | null>;
   submit: () => Promise<ScreeningScore | null>;
   saveProgress: () => Promise<void>;
   resumeSession: (session: any) => void;

@@ -89,15 +89,30 @@ export default function BehaviorScreeningScreen({ navigation }: { navigation: an
   const { language } = useLanguage();
   const { t } = useTranslation();
   const screening = useScreening();
-  const savedBehavior = screening.getDomainAnswers('Behavior');
-  const initialBehavior = Array(QUESTIONS.length).fill(null);
-  savedBehavior.forEach((a, i) => {
-    if (typeof a === 'number' && !Number.isNaN(a)) initialBehavior[i] = a;
-  });
+  const savedBehavior = screening.domainAnswers?.Behavior || [];
+  const initialBehavior = Array(QUESTIONS.length)
+    .fill(null)
+    .map((_, i) => (typeof savedBehavior[i] === 'number' && !Number.isNaN(savedBehavior[i]) ? savedBehavior[i] : null));
   const [answers, setAnswers] = useState<(number | null)[]>(initialBehavior);
+
+  const hasWritten = useRef(false);
   useEffect(() => {
+    if (!hasWritten.current) {
+      hasWritten.current = true;
+      return;
+    }
     screening.setDomainAnswers('Behavior', answers);
   }, [answers]);
+
+  useEffect(() => {
+    const incoming = screening.domainAnswers?.Behavior || [];
+    const next = Array(QUESTIONS.length)
+      .fill(null)
+      .map((_, i) => (typeof incoming[i] === 'number' && !Number.isNaN(incoming[i]) ? incoming[i] : null));
+    if (JSON.stringify(next) !== JSON.stringify(answers)) {
+      setAnswers(next);
+    }
+  }, [screening.domainAnswers]);
   const scrollRef = useRef<ScrollView>(null);
   const headerHeightRef = useRef(0);
   const positionsRef = useRef<number[]>([]);

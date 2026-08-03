@@ -83,15 +83,30 @@ export default function SensoryScreeningScreen({ navigation }: { navigation: any
   const { language } = useLanguage();
   const { t } = useTranslation();
   const screening = useScreening();
-  const savedSensory = screening.getDomainAnswers('Sensory');
-  const initialSensory = Array(QUESTIONS.length).fill(null);
-  savedSensory.forEach((a, i) => {
-    if (typeof a === 'number' && !Number.isNaN(a)) initialSensory[i] = a;
-  });
+  const savedSensory = screening.domainAnswers?.Sensory || [];
+  const initialSensory = Array(QUESTIONS.length)
+    .fill(null)
+    .map((_, i) => (typeof savedSensory[i] === 'number' && !Number.isNaN(savedSensory[i]) ? savedSensory[i] : null));
   const [answers, setAnswers] = useState<(number | null)[]>(initialSensory);
+
+  const hasWritten = useRef(false);
   useEffect(() => {
+    if (!hasWritten.current) {
+      hasWritten.current = true;
+      return;
+    }
     screening.setDomainAnswers('Sensory', answers);
   }, [answers]);
+
+  useEffect(() => {
+    const incoming = screening.domainAnswers?.Sensory || [];
+    const next = Array(QUESTIONS.length)
+      .fill(null)
+      .map((_, i) => (typeof incoming[i] === 'number' && !Number.isNaN(incoming[i]) ? incoming[i] : null));
+    if (JSON.stringify(next) !== JSON.stringify(answers)) {
+      setAnswers(next);
+    }
+  }, [screening.domainAnswers]);
   const scrollRef = useRef<ScrollView>(null);
   const headerHeightRef = useRef(0);
   const positionsRef = useRef<number[]>([]);

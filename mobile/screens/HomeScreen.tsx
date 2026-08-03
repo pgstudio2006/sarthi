@@ -461,12 +461,16 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
     
     const answers: Record<string, number[]> = {};
     if (session.responses) {
-      session.responses.forEach((r: any) => {
+      const sortedResponses = [...session.responses].sort((a: any, b: any) => {
+        if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
+        return (a.questionIndex ?? 0) - (b.questionIndex ?? 0);
+      });
+      sortedResponses.forEach((r: any) => {
         if (!answers[r.domain]) {
           answers[r.domain] = [];
         }
         const val = typeof r.score === 'number' ? Math.max(0, r.score - 1) : 0;
-        answers[r.domain].push(val);
+        answers[r.domain][r.questionIndex] = val;
       });
     }
 

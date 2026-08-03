@@ -399,14 +399,15 @@ export default function NoAutismReportScreen({ navigation, route }: any) {
       });
     }
 
+    const hasAnswers = answers && answers.length > 0;
     return {
       ...d,
       score: scoreStr,
       status: statusStr,
       statusColor: statusColorStr,
       statusBg: statusBgStr,
-      attention: attention.length > 0 ? attention : (answers.length > 0 ? [] : d.attention),
-      strengths: strengths.length > 0 ? strengths : (answers.length > 0 ? [] : d.strengths),
+      attention: hasAnswers ? attention : (domainBreakdown ? [] : d.attention),
+      strengths: hasAnswers ? strengths : (domainBreakdown ? [] : d.strengths),
     };
   });
 

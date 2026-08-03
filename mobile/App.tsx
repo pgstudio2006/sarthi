@@ -39,9 +39,7 @@ import ScreeningReportScreen from './screens/ScreeningReportScreen';
 import NoAutismCompletionScreen from './screens/NoAutismCompletionScreen';
 import NoAutismReportScreen from './screens/NoAutismReportScreen';
 import ModerateAutismCompletionScreen from './screens/ModerateAutismCompletionScreen';
-import ModerateAutismReportScreen from './screens/ModerateAutismReportScreen';
 import SevereAutismCompletionScreen from './screens/SevereAutismCompletionScreen';
-import SevereAutismReportScreen from './screens/SevereAutismReportScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -116,9 +114,9 @@ export default function App() {
           <Stack.Screen name="ModerateAutismCompletion" component={ModerateAutismCompletionScreen} />
           <Stack.Screen name="ModerateAutismReport" component={ModerateAutismReportScreen} />
           <Stack.Screen name="SevereAutismCompletion" component={SevereAutismCompletionScreen} />
-          <Stack.Screen name="SevereAutismReport" component={SevereAutismReportScreen} />
+          <Stack.Screen name="SevereAutismReport" component={SeScAienengrtScreen} />
         </Stack.Navigator>
-      </NavigationContainer>
+      </NavigationContainer>crnng
           </ScreeningProvider>
         <StatusBar style="dark" />
       </AuthProvider>
