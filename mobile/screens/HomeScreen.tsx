@@ -966,6 +966,14 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                 style={{ marginHorizontal: padding }}
               />
 
+              <View
+                style={{ height: 0 }}
+                onLayout={(e) => {
+                  const { y, height } = e.nativeEvent.layout;
+                  setFirstFoldBottom(y + height);
+                }}
+              />
+
               <Section title={t('whyEarlyScreening')} body={t('whyEarlyScreeningBody')} scaleSize={scaleSize}>
                 <View style={{ gap: scaleSize(12), marginTop: scaleSize(16) }}>
                   {LEARN_ITEMS.map((item) => {
@@ -1007,14 +1015,6 @@ export default function HomeScreen({ navigation, route }: { navigation: any; rou
                   ))}
                 </View>
               </Section>
-
-              <View
-                style={{ height: 0 }}
-                onLayout={(e) => {
-                  const { y, height } = e.nativeEvent.layout;
-                  setFirstFoldBottom(y + height);
-                }}
-              />
 
               <Section title={t('howDoesItWork')} scaleSize={scaleSize}>
                 <View style={{ gap: 0, marginTop: scaleSize(16) }}>
