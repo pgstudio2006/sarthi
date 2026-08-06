@@ -61,7 +61,7 @@ const CASE_2_FAQS: FAQItem[] = [
   },
   {
     title: "Will one answer change the entire screening result?",
-    body: "No. The screening looks at overall patterns across multiple domains (Social, Emotional, Speech, Behaviour, Sensory, Cognitive). A single answer will not determine the final outcome.",
+    body: "No. The screening looks at overall patterns across multiple domains (Social, Emotion, Speech, Behaviour, Sensory, Cognitive). A single answer will not determine the final outcome.",
   },
   {
     title: "Why do some questions seem similar?",
@@ -102,7 +102,7 @@ const DOMAIN_FAQS: Record<string, FAQItem[]> = {
   ],
   Emotion: [
     {
-      title: "Why does my child have sudden emotional meltdowns?",
+      title: "Why does my child have sudden emotion meltdowns?",
       body: "Meltdowns are often responses to sensory overload or difficulty communicating feelings. Creating a calm environment and using visual feeling charts can help manage them.",
     },
     {

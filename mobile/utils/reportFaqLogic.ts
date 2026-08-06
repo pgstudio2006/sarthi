@@ -35,7 +35,7 @@ const DOMAIN_ADVICE: Record<string, { support: string; strength: string }> = {
     support:
       'Use feeling cards and calm-down routines. Name emotions out loud and show your child healthy ways to reset.',
     strength:
-      'Nurture emotional awareness by talking about feelings during daily moments and validating their emotions.',
+      'Nurture emotion awareness by talking about feelings during daily moments and validating their emotions.',
   },
   Speech: {
     support:

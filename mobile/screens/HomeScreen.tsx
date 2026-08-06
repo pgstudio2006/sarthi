@@ -66,7 +66,7 @@ const LEARN_ITEMS = [
 
 const DOMAINS: { name: string; Icon: React.ComponentType<{ width?: number; height?: number }>; color: string }[] = [
   { name: 'Social', Icon: SocialIcon, color: '#9B4FD6' },
-  { name: 'Emotional', Icon: EmotionalIcon, color: '#2DAEA8' },
+  { name: 'Emotion', Icon: EmotionalIcon, color: '#2DAEA8' },
   { name: 'Speech', Icon: SpeechIcon, color: '#1EA7F2' },
   { name: 'Behaviour', Icon: BehaviourIcon, color: '#F04D9B' },
   { name: 'Sensory', Icon: SensoryIcon, color: '#F57A3E' },

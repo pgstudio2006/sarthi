@@ -75,7 +75,7 @@ const DOMAIN_QUESTIONS: Record<string, string[]> = {
 
 const DOMAIN_LABELS: Record<string, string> = {
   Social: 'Social Relationships',
-  Emotion: 'Emotional Responses',
+  Emotion: 'Emotion Responses',
   Speech: 'Speech & Communication',
   Behavior: 'Behaviour Patterns',
   Sensory: 'Sensory Responses',
@@ -421,7 +421,7 @@ export type DomainInsightCard = {
 
 const DOMAIN_INSIGHT_META: Record<string, { title: string; color: string; Icon: any; supportHeading: string; goodHeading: string }> = {
   Social: { title: 'Social Interaction', color: '#9651C8', Icon: SocialIcon, supportHeading: 'Social interaction needs support', goodHeading: 'Social interaction is on track' },
-  Emotion: { title: 'Emotional Responses', color: '#2BA8A6', Icon: EmotionIcon, supportHeading: 'Emotional responses need support', goodHeading: 'Emotional responses are on track' },
+  Emotion: { title: 'Emotion Responses', color: '#2BA8A6', Icon: EmotionIcon, supportHeading: 'Emotion responses need support', goodHeading: 'Emotion responses are on track' },
   Speech: { title: 'Speech & Language', color: '#3B8DBD', Icon: SpeechIcon, supportHeading: 'Communication needs support', goodHeading: 'Speech & language is on track' },
   Behavior: { title: 'Behavioural Patterns', color: '#D66A8E', Icon: BehaviorIcon, supportHeading: 'Repetitive patterns need guidance', goodHeading: 'Daily behaviours are well-balanced' },
   Sensory: { title: 'Sensory Responses', color: '#F4A261', Icon: SensoryIcon, supportHeading: 'Sensory responses need support', goodHeading: 'Sensory responses are on track' },

@@ -95,7 +95,7 @@ const DEVELOPMENT_DOMAINS_STATIC = [
   },
   {
     key: 'Emotion',
-    label: 'Emotional',
+    label: 'Emotion',
     status: 'Needs extra support',
     statusColor: '#E25648',
     statusBg: '#FDF0EB',
@@ -107,8 +107,8 @@ const DEVELOPMENT_DOMAINS_STATIC = [
       'Can express basic feelings',
     ],
     attention: [
-      'Inappropriate emotional responses',
-      'Exaggerated emotional reactions',
+      'Inappropriate emotion responses',
+      'Exaggerated emotion reactions',
     ],
   },
   {

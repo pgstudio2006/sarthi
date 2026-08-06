@@ -71,7 +71,7 @@ const DOMAINS_DETAIL = [
   },
   {
     key: 'Emotion',
-    label: 'Emotional',
+    label: 'Emotion',
     Icon: EmotionIcon,
     color: '#2BA8A6',
     score: '38/45',

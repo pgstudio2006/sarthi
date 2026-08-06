@@ -95,7 +95,7 @@ const DEVELOPMENT_DOMAINS = [
   },
   {
     key: 'Emotion',
-    label: 'Emotional',
+    label: 'Emotion',
     status: 'Needs extra support',
     statusColor: '#C62828',
     statusBg: '#FDE8E8',
@@ -106,7 +106,7 @@ const DEVELOPMENT_DOMAINS = [
       'Responds well to calm parent presence',
     ],
     attention: [
-      'Frequent intense meltdowns or emotional outbursts',
+      'Frequent intense meltdowns or emotion outbursts',
       'Extreme difficulty self-regulating',
       'Expression of distress in new settings',
     ],

@@ -32,7 +32,7 @@ import CheckmarkIcon from '../assets/figma/screen27/Checkmark.png';
 
 const DOMAINS = [
   { key: 'Social', label: 'Social', Icon: SocialIcon, color: '#9651C8', progress: 1, ringColor: '#B87FE5' },
-  { key: 'Emotion', label: 'Emotional', Icon: EmotionIcon, color: '#2BA8A6', progress: 1, ringColor: '#4ECDC4' },
+  { key: 'Emotion', label: 'Emotion', Icon: EmotionIcon, color: '#2BA8A6', progress: 1, ringColor: '#4ECDC4' },
   { key: 'Speech', label: 'Speech', Icon: SpeechIcon, color: '#3B8DBD', progress: 1, ringColor: '#6BADD6' },
   { key: 'Behavior', label: 'Behaviour', Icon: BehaviorIcon, color: '#D66A8E', progress: 1, ringColor: '#F28FAD' },
   { key: 'Sensory', label: 'Sensory', Icon: SensoryIcon, color: '#F4A261', progress: 1, ringColor: '#F7B37E' },
